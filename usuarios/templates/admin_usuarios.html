@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Administração de Usuários{% endblock %}
+
+{% block content %}
+<h2>Administração de Usuários</h2>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="message">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<table>
+  <thead>
+    <tr>
+      <th>Usuário</th>
+      <th>Tipo</th>
+      <th>Ativo</th>
+      <th>Ação</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for usuario in usuarios %}
+      <tr>
+        <td>{{ usuario.username }}</td>
+        <td>
+          <form method="post" onsubmit="event.preventDefault(); if(confirm('Deseja alterar o tipo do usuário?')) this.submit();">
+            {% csrf_token %}
+            <input type="hidden" name="user_id" value="{{ usuario.id }}">
+            <select name="tipo">
+              <option value="master" {% if usuario.tipo == 'master' %}selected{% endif %}>Master</option>
+              <option value="editor" {% if usuario.tipo == 'editor' %}selected{% endif %}>Editor</option>
+              <option value="visualizador" {% if usuario.tipo == 'visualizador' %}selected{% endif %}>Visualizador</option>
+            </select>
+        </td>
+        <td>{{ usuario.is_active|yesno:"✔️,❌" }}</td>
+        <td><button type="submit">Salvar</button></form></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

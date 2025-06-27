@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Confirmar Exclusão{% endblock %}
+
+{% block content %}
+  <h2 style="color: #d9534f;">⚠️ Confirmar Exclusão de Campanha</h2>
+
+  <div style="margin-top: 1.5rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px; background: #fffbea;">
+    <p>
+      Tem certeza de que deseja <strong>excluir</strong> a campanha abaixo?
+    </p>
+
+    <ul style="margin-top: 1rem; line-height: 1.6;">
+      <li><strong>Campanha:</strong> {{ object.campanha }}</li>
+      <li><strong>Banco:</strong> {{ object.banco }}</li>
+      <li><strong>Vigência:</strong> {{ object.vigencia_inicio|date:"d/m/Y" }} até {{ object.vigencia_fim|date:"d/m/Y" }}</li>
+      <li><strong>Status:</strong> {{ object.status_manual }}</li>
+    </ul>
+
+    <form method="post" style="margin-top: 1.5rem;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">🗑️ Sim, excluir campanha</button>
+      <a href="{% url 'campanha_controle' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+  </div>
+{% endblock %}

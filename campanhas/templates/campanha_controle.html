@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Controle de Campanhas{% endblock %}
+
+{% block content %}
+<h2>🎛️ Controle de Campanhas</h2>
+
+<table style="width: 100%; border-collapse: collapse; margin-top: 1.5rem;">
+  <thead>
+    <tr style="background-color: #f0f0f0;">
+      <th style="padding: 10px;">Campanha</th>
+      <th>Banco</th>
+      <th>Status</th>
+      <th>Início</th>
+      <th>Fim</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for campanha in campanhas %}
+      <tr style="border-bottom: 1px solid #ccc;">
+        <td style="padding: 10px;">{{ campanha.campanha }}</td>
+        <td>{{ campanha.banco }}</td>
+        <td>{{ campanha.status_manual }}</td>
+        <td>{{ campanha.vigencia_inicio|date:"d/m/Y" }}</td>
+        <td>{{ campanha.vigencia_fim|date:"d/m/Y" }}</td>
+        <td>
+          <a href="{% url 'campanha_editar' campanha.pk %}" class="btn btn-sm btn-outline-primary">✏️ Editar</a>
+          <a href="{% url 'campanha_deletar' campanha.pk %}" class="btn btn-sm btn-outline-danger">🗑️ Deletar</a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">Nenhuma campanha cadastrada.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

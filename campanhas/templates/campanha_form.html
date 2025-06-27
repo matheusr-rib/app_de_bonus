@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}Cadastrar Campanha{% endblock %}
+
+{% block content %}
+<h2>Nova Campanha</h2>
+
+<form method="post">
+    {% csrf_token %}
+
+    <fieldset>
+        <legend><strong>Informações Básicas + Banco</strong></legend>
+        {{ form_campanha.as_p }}
+    </fieldset>
+
+    <fieldset>
+        <legend><strong>Recebimento e Repasse</strong></legend>
+        <div id="recebimento-campos">
+            {{ form_recebimento.recebido.label_tag }} {{ form_recebimento.recebido }}
+            {{ form_recebimento.tipo_valor_recebido.label_tag }} {{ form_recebimento.tipo_valor_recebido }}
+        </div>
+        {{ form_recebimento.parametrizado_wb.label_tag }} {{ form_recebimento.parametrizado_wb }}
+        {{ form_recebimento.tipo_valor_parametrizado_wb.label_tag }} {{ form_recebimento.tipo_valor_parametrizado_wb }}
+    </fieldset>
+
+    <fieldset>
+        <legend><strong>Faixas de Meta</strong></legend>
+        <div>
+            <label>
+                <input type="checkbox" id="id_possui_meta" name="possui_meta" {% if form_campanha.instance.possui_meta %}checked{% endif %}>
+                Possui meta?
+            </label>
+        </div>
+
+        <div id="meta-formset-wrapper" style="display: none; margin-top: 1rem;">
+            {{ faixa_formset.management_form }}
+            <input type="hidden" name="{{ faixa_formset.prefix }}-TOTAL_FORMS" value="{{ faixa_formset.total_form_count }}">
+
+            <div id="formset-container">
+                {% for form in faixa_formset %}
+                    <div class="formset-form" style="border: 1px solid #ccc; margin-bottom: 1rem; padding: 1rem; border-radius: 8px; position: relative;">
+                        {{ form.id }}
+                        {{ form.faixa_inicial.label_tag }} {{ form.faixa_inicial }}
+                        {{ form.faixa_final.label_tag }} {{ form.faixa_final }}
+                        {{ form.tipo_valor.label_tag }} {{ form.tipo_valor }}
+                        {{ form.valor_recebido.label_tag }} {{ form.valor_recebido }}
+                        {{ form.faixa_garantida.label_tag }} {{ form.faixa_garantida }}
+
+                        {{ form.DELETE }}
+                        <button type="button" class="remove-faixa-btn" style="color: red; position: absolute; top: 6px; right: 6px;">❌ Remover</button>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <button type="button" id="add-faixa-btn">Adicionar Faixa</button>
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <legend><strong>Vigência e Regras</strong></legend>
+        {{ form_vigencia.as_p }}
+    </fieldset>
+
+    <button type="submit">Salvar Campanha</button>
+</form>
+
+<script>
+    const possuiMetaCheckbox = document.getElementById('id_possui_meta');
+    const metaWrapper = document.getElementById('meta-formset-wrapper');
+    const recebimentoCampos = document.getElementById('recebimento-campos');
+
+    function toggleCamposMeta() {
+        const show = possuiMetaCheckbox.checked;
+        metaWrapper.style.display = show ? 'block' : 'none';
+        if (recebimentoCampos) {
+            recebimentoCampos.style.display = show ? 'none' : 'block';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        toggleCamposMeta();
+        attachRemoveEvents();
+    });
+
+    possuiMetaCheckbox.addEventListener('change', toggleCamposMeta);
+
+    const formsetContainer = document.getElementById('formset-container');
+    const addButton = document.getElementById('add-faixa-btn');
+    const totalFormsInput = document.querySelector('input[name="faixas-TOTAL_FORMS"]');
+
+    addButton.addEventListener('click', function () {
+        const currentFormCount = parseInt(totalFormsInput.value);
+        const newFormHtml = formsetContainer.children[0].outerHTML.replace(/faixas-(\d+)/g, `faixas-${currentFormCount}`);
+        formsetContainer.insertAdjacentHTML('beforeend', newFormHtml);
+        totalFormsInput.value = currentFormCount + 1;
+        attachRemoveEvents();
+    });
+
+    function attachRemoveEvents() {
+        document.querySelectorAll('.remove-faixa-btn').forEach(function (btn) {
+            btn.onclick = function () {
+                const formDiv = btn.closest('.formset-form');
+                const deleteCheckbox = formDiv.querySelector('input[type="checkbox"][name$="-DELETE"]');
+                if (deleteCheckbox) {
+                    deleteCheckbox.checked = true;
+                    formDiv.style.display = 'none';
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

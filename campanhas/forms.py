@@ -61,8 +61,14 @@ class VigenciaERegras(ModelForm):
             'observacoes','status_manual'
         ]
         widgets = {
-            'vigencia_inicio': forms.DateInput(attrs={'type': 'date'}),
-            'vigencia_fim': forms.DateInput(attrs={'type': 'date'}),
+            'vigencia_inicio': forms.DateInput(
+                format='%Y-%m-%d',
+                attrs={'type': 'date'}
+            ),
+            'vigencia_fim': forms.DateInput(
+                format='%Y-%m-%d',
+                attrs={'type': 'date'}
+            ),
             'observacoes': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Detalhes adicionais...'}),
         }
 
@@ -72,7 +78,7 @@ FaixaMetaFormSet = inlineformset_factory(
     FaixaMeta,
     fields=['faixa_inicial', 'faixa_final', 'tipo_valor', 'valor_recebido', 'faixa_garantida'],
     extra=1,
-    can_delete=True,  # 💥 importante!
+    can_delete=True,  
     widgets={
         'faixa_inicial': forms.NumberInput(attrs={'placeholder': '0.00', 'step': '0.01'}),
         'faixa_final': forms.NumberInput(attrs={'placeholder': 'opcional', 'step': '0.01'}),

@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-
+from historico.middleware import get_current_request
 
 class Banco(models.Model):
     nome = models.CharField(max_length=100, default='Banco Genérico')
@@ -30,7 +30,7 @@ class Campanha(models.Model):
     tipo_valor_parametrizado_wb = models.CharField(max_length=20, choices=TIPO_VALOR_CHOICES, default=' ', blank=True, null=True)
 
     vigencia_inicio = models.DateField(default=timezone.now)
-    vigencia_fim = models.DateField(default=timezone.now,blank=True, null=True)
+    vigencia_fim = models.DateField(blank=True, null=True)
     periodicidade_repasses = models.CharField(max_length=100, default=' ')
     previsao_pagamento = models.CharField(max_length=100,blank=True, null=True)
     parametro_avaliacao = models.TextField(default=' ')
@@ -44,6 +44,11 @@ class Campanha(models.Model):
 
     def __str__(self):
         return f"{self.campanha} ({self.banco})"
+    
+    def save(self, *args, **kwargs):
+        self._request = get_current_request()
+        super().save(*args, **kwargs)
+
 
 
 class FaixaMeta(models.Model):

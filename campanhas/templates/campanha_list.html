@@ -13,11 +13,11 @@
 
   <div>
     <label for="id_status">📌 Filtrar por status</label><br>
-    <select name="status" id="id_status" style="padding: 6px; border-radius: 6px; border: 1px solid #ccc;">
-      <option value="todas" {% if status == 'todas' %}selected{% endif %}>Todas</option>
-      <option value="ativa" {% if status == 'ativa' %}selected{% endif %}>Ativa</option>
-      <option value="encerrada" {% if status == 'encerrada' %}selected{% endif %}>Encerrada</option>
-      <option value="em análise" {% if status == 'em análise' %}selected{% endif %}>Em análise</option>
+    <select name="status" id="id_status"
+        style="padding: 6px; border-radius: 6px; border: 1px solid #ccc;">
+        <option value="todas"        {% if status == 'todas' %}selected{% endif %}>Todas</option>
+        <option value="ATIVA"        {% if status == 'ATIVA' %}selected{% endif %}>Ativa</option>
+        <option value="EM ANALISE"   {% if status == 'EM ANALISE' %}selected{% endif %}>Em análise</option>
     </select>
   </div>
 
@@ -107,7 +107,10 @@
           {{ campanha.tipo_valor_recebido }}
         {% endif %}
       </p>
-      <p><strong>Parametrizado:</strong> {{ campanha.parametrizado_wb|default:"-" }}</p>
+      <p><strong>Parametrizado:</strong> 
+        {{ campanha.parametrizado_wb|default:"-" }}  
+        {{ campanha.tipo_valor_parametrizado_wb }}
+      </p>
 
       <div class="detalhes-hover">
         <h4>Detalhes adicionais</h4>

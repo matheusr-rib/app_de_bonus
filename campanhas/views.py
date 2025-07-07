@@ -14,6 +14,7 @@ from .forms import (
     FaixaMetaFormSet
 )
 
+
 @method_decorator(login_required(login_url='login'), name='dispatch')
 class CampanhaListView(ListView):
     model = Campanha
@@ -44,10 +45,18 @@ class CampanhaListView(ListView):
         return context
 
 
-
 @method_decorator(login_required(login_url='login'), name='dispatch')
 @method_decorator(tipo_usuario_requerido('master', 'editor'), name='dispatch')
 class CampanhaCreateView(View):
+    """Cria uma campanha e, opcionalmente, várias FaixaMeta.
+
+    A ordem correta é:
+      1. Validar os formulários principais.
+      2. Salvar a campanha para obter o PK.
+      3. Reinstanciar o formset **com** `instance` e validá‑lo.
+      4. Salvar o formset.
+    """
+
     template_name = 'campanha_form.html'
 
     def get(self, request):
@@ -62,15 +71,11 @@ class CampanhaCreateView(View):
         form_campanha = CampanhaBaseForm(request.POST)
         form_recebimento = Recebimento_E_Repasse(request.POST)
         form_vigencia = VigenciaERegras(request.POST)
-        faixa_formset = FaixaMetaFormSet(request.POST, prefix='faixas')
         possui_meta = request.POST.get('possui_meta') == 'on'
 
-        if all([
-            form_campanha.is_valid(),
-            form_recebimento.is_valid(),
-            form_vigencia.is_valid(),
-            faixa_formset.is_valid()
-        ]):
+        # Valida primeiro os formulários principais
+        if form_campanha.is_valid() and form_recebimento.is_valid() and form_vigencia.is_valid():
+            # 1️⃣ Salva a campanha para obter o PK
             campanha = form_campanha.save(commit=False)
 
             campanha.recebido = form_recebimento.cleaned_data.get('recebido')
@@ -90,12 +95,26 @@ class CampanhaCreateView(View):
             campanha.possui_meta = possui_meta
             campanha.save()
 
+            # 2️⃣ Reinstancia o formset AGORA com a instância salva
+            faixa_formset = FaixaMetaFormSet(request.POST, instance=campanha, prefix='faixas')
+
+            # 3️⃣ Valida e salva as faixas
             if possui_meta:
-                faixa_formset.instance = campanha
-                faixa_formset.save()
+                if faixa_formset.is_valid():
+                    faixa_formset.save()
+                else:
+                    # Se as faixas estiverem inválidas, volta ao form com erros
+                    return render(request, self.template_name, {
+                        'form_campanha': form_campanha,
+                        'form_recebimento': form_recebimento,
+                        'form_vigencia': form_vigencia,
+                        'faixa_formset': faixa_formset
+                    })
 
             return redirect('campanha_list')
 
+        # Se qualquer form principal for inválido, monta o formset vazio para exibir
+        faixa_formset = FaixaMetaFormSet(request.POST, prefix='faixas')
         return render(request, self.template_name, {
             'form_campanha': form_campanha,
             'form_recebimento': form_recebimento,
@@ -153,8 +172,6 @@ class CampanhaUpdateView(View):
 
             if possui_meta:
                 faixa_formset.save()
-            else:
-                campanha.faixameta_set.all().delete()
 
             return redirect('campanha_list')
 
@@ -172,6 +189,16 @@ class CampanhaDeleteView(DeleteView):
     model = Campanha
     template_name = 'campanha_confirm_delete.html'
     success_url = reverse_lazy('campanha_controle')
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        
+        # Apaga as faixas ligadas primeiro
+        self.object.faixas.all().delete()
+
+        # Agora pode deletar a campanha
+        self.object.delete()
+        return redirect(self.success_url)
 
 
 @method_decorator(login_required, name='dispatch')

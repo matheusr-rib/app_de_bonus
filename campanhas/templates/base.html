@@ -56,14 +56,15 @@
         </div>
         
         <a href="{% url 'campanha_list' %}"><i class="fa fa-list"></i>Listar Campanhas</a>
-        <a href="{% url 'campanha_create' %}"><i class="fa fa-plus-circle"></i>Nova Campanha</a>
         {% if user.is_authenticated and user.tipo in 'editor master' %}
+            <a href="{% url 'campanha_create' %}"><i class="fa fa-plus-circle"></i>Nova Campanha</a>
             <a href="{% url 'campanha_controle' %}">⚙️ Gerenciar Campanhas</a>
         {% endif %}
         <a href="#"><i class="fa fa-chart-bar"></i>Relatórios</a>
 
         {% if user.is_authenticated and user.tipo == 'master' %}
         <a href="{% url 'admin_usuarios' %}"><i class="fa fa-users-cog"></i>Admin. Usuários</a>
+        <a href="{% url 'historico_listagem' %}"><i class="fa fa-history"></i>histórico</a>
         {% endif %}
 
         <div style="margin-top: auto; padding: 20px;">

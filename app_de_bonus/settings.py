@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'campanhas',
     'usuarios',
+    'historico.apps.HistoricoConfig',
 ]
 AUTH_USER_MODEL = 'usuarios.Usuario'
 MIDDLEWARE = [
@@ -49,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'historico.middleware.RequestMiddleware',
 ]
 
 ROOT_URLCONF = 'app_de_bonus.urls'
@@ -77,8 +79,12 @@ WSGI_APPLICATION = 'app_de_bonus.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'meuappbonus_db',
+        'USER': 'postgres',
+        'PASSWORD': '1436',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 

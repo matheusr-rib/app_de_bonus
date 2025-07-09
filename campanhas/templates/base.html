@@ -1,81 +1,83 @@
-<!-- templates/base.html -->
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>{% block title %}Sistema de Bônus{% endblock %}</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f4f4f4;
-            display: flex;
-        }
+  <meta charset="UTF-8">
+  <title>{% block title %}Sistema de Bônus{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-        .sidebar {
-            width: 240px;
-            height: 100vh;
-            background: linear-gradient(to bottom, #820AD1, #3F0E40);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            padding-top: 2rem;
-        }
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-        .sidebar a {
-            color: white;
-            text-decoration: none;
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            transition: background 0.2s;
-        }
+  <!-- Google Font (opcional) -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
 
-        .sidebar a:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar i {
-            margin-right: 10px;
-        }
-
-        .content {
-            flex: 1;
-            padding: 2rem;
-        }
-    </style>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+    }
+  </style>
 </head>
-<body>
-    <nav class="sidebar">
+<body class="flex bg-gray-100 min-h-screen">
 
-        <div style="padding: 0 20px; margin-bottom: 2rem;">
-        {% if user.is_authenticated %}
-            <p>👋 Olá, <strong>{{ user.username }}</strong></p>
-        {% endif %}
-        </div>
-        
-        <a href="{% url 'campanha_list' %}"><i class="fa fa-list"></i>Listar Campanhas</a>
-        {% if user.is_authenticated and user.tipo in 'editor master' %}
-            <a href="{% url 'campanha_create' %}"><i class="fa fa-plus-circle"></i>Nova Campanha</a>
-            <a href="{% url 'campanha_controle' %}">⚙️ Gerenciar Campanhas</a>
-        {% endif %}
-        <a href="#"><i class="fa fa-chart-bar"></i>Relatórios</a>
+  <!-- Sidebar -->
+  <aside class="w-64 bg-gradient-to-b from-purple-800 to-purple-900 text-white flex flex-col py-6 px-4">
+    
+    <!-- Logo -->
+    <div class="mb-8 flex items-center justify-center">
+      <img src="{% static 'img/lev-logo.png' %}" alt="Logo LEV" class="h-13">
+    </div>
 
-        {% if user.is_authenticated and user.tipo == 'master' %}
-        <a href="{% url 'admin_usuarios' %}"><i class="fa fa-users-cog"></i>Admin. Usuários</a>
-        <a href="{% url 'historico_listagem' %}"><i class="fa fa-history"></i>histórico</a>
-        {% endif %}
+    <!-- Saudação -->
+    {% if user.is_authenticated %}
+      <div class="text-sm mb-8 text-center">
+        👋 Olá, <strong>{{ user.username }}</strong>
+      </div>
+    {% endif %}
 
-        <div style="margin-top: auto; padding: 20px;">
-        {% if user.is_authenticated %}
-            <a href="{% url 'logout' %}"><i class="fa fa-sign-out-alt"></i> Sair</a>
-        {% endif %}
-        </div>
+    <!-- Navegação -->
+    <nav class="flex flex-col space-y-7 text-sm font-medium">
+      <a href="{% url 'campanha_list' %}" class="flex items-center gap-2 px-8 py-6 rounded hover:bg-purple-700 transition">
+        <i class="fa fa-list"></i> Listar Campanhas
+      </a>
+
+      {% if user.is_authenticated and user.tipo in 'editor master' %}
+        <a href="{% url 'campanha_create' %}" class="flex items-center gap-2 px-8 py-6 rounded hover:bg-purple-700 transition">
+          <i class="fa fa-plus-circle"></i> Nova Campanha
+        </a>
+        <a href="{% url 'campanha_controle' %}" class="flex items-center gap-2 px-8 py-6 rounded hover:bg-purple-700 transition">
+          <i class="fa fa-cog"></i> Gerenciar Campanhas
+        </a>
+      {% endif %}
+
+    
+
+      {% if user.is_authenticated and user.tipo == 'master' %}
+        <a href="{% url 'admin_usuarios' %}" class="flex items-center gap-2 px-8 py-6 rounded hover:bg-purple-700 transition">
+          <i class="fa fa-users-cog"></i> Admin. Usuários
+        </a>
+        <a href="{% url 'historico_listagem' %}" class="flex items-center gap-2 px-8 py-6 rounded hover:bg-purple-700 transition">
+          <i class="fa fa-history"></i> Histórico
+        </a>
+      {% endif %}
     </nav>
 
-    <main class="content">
-        {% block content %}{% endblock %}
-    </main>
+    <!-- Sair -->
+    {% if user.is_authenticated %}
+      <div class="mt-auto pt-6">
+        <a href="{% url 'logout' %}" class="flex items-center gap-2 px-4 py-2 rounded hover:bg-purple-700 transition text-sm">
+          <i class="fa fa-sign-out-alt"></i> Sair
+        </a>
+      </div>
+    {% endif %}
+  </aside>
+
+  <!-- Conteúdo principal -->
+  <main class="flex-1 p-6">
+    {% block content %}{% endblock %}
+  </main>
 </body>
 </html>

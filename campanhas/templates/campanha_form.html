@@ -1,112 +1,251 @@
 {% extends 'base.html' %}
 {% block title %}Cadastrar Campanha{% endblock %}
-
+{% load widget_tweaks %}
 {% block content %}
-<h2>Nova Campanha</h2>
+<style>
+.toggle-checkbox {
+  appearance: none;
+  width: 2.25rem;
+  height: 1.2rem;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+.toggle-checkbox:checked {
+  background-color: #8b5cf6;
+}
+.toggle-checkbox::before {
+  content: "";
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  background-color: white;
+  border-radius: 9999px;
+  top: 0.1rem;
+  left: 0.1rem;
+  transition: transform 0.2s ease-in-out;
+}
+.toggle-checkbox:checked::before {
+  transform: translateX(1.1rem);
+}
+</style>
 
-<form method="post">
+<div class="max-w-6xl mx-auto">
+  <h2 class="text-3xl font-bold text-purple-800 mb-10">Cadastrar Campanha</h2>
+
+  <form method="post" class="space-y-10">
     {% csrf_token %}
 
-    <fieldset>
-        <legend><strong>Informações Básicas + Banco</strong></legend>
-        {{ form_campanha.as_p }}
-    </fieldset>
+    {% if form_campanha.non_field_errors %}
+      <p class="text-red-500 text-sm">{{ form_campanha.non_field_errors.0 }}</p>
+    {% endif %}
+    {% if faixa_formset.non_form_errors %}
+      <p class="text-red-500 text-sm">{{ faixa_formset.non_form_errors.0 }}</p>
+    {% endif %}
 
-    <fieldset>
-        <legend><strong>Recebimento e Repasse</strong></legend>
-        <div id="recebimento-campos">
-            {{ form_recebimento.recebido.label_tag }} {{ form_recebimento.recebido }}
-            {{ form_recebimento.tipo_valor_recebido.label_tag }} {{ form_recebimento.tipo_valor_recebido }}
-        </div>
-        {{ form_recebimento.parametrizado_wb.label_tag }} {{ form_recebimento.parametrizado_wb }}
-        {{ form_recebimento.tipo_valor_parametrizado_wb.label_tag }} {{ form_recebimento.tipo_valor_parametrizado_wb }}
-    </fieldset>
-
-    <fieldset>
-        <legend><strong>Faixas de Meta</strong></legend>
+    <section class="bg-white p-6 rounded-lg shadow border border-gray-200">
+      <h3 class="text-xl font-semibold text-purple-700 mb-4"><i class="fa fa-file-alt mr-2 text-gray-500"></i> Informações Básicas</h3>
+      <div class="grid md:grid-cols-2 gap-6">
         <div>
-            <label>
-                <input type="checkbox" id="id_possui_meta" name="possui_meta"
-                       {% if form_campanha.instance.possui_meta %}checked{% endif %}>
-                Possui meta?
+          <label class="block text-sm font-medium text-gray-700">Banco:</label>
+          {{ form_campanha.banco_nome|add_class:"w-full p-2 border border-gray-300 rounded bg-white" }}
+          {% if form_campanha.banco_nome.errors %}
+            <p class="text-red-500 text-sm mt-1">{{ form_campanha.banco_nome.errors.0 }}</p>
+          {% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Campanha:</label>
+          {{ form_campanha.campanha|add_class:"w-full p-2 border border-gray-300 rounded" }}
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700">Nomenclatura WB:</label>
+          {{ form_campanha.nomenclatura_wb|add_class:"w-full p-2 border border-gray-300 rounded" }}
+        </div>
+        <div class="md:col-span-2">
+          <label for="id_possui_meta" class="inline-flex items-center">
+            <input type="checkbox" name="possui_meta" id="id_possui_meta" class="mr-2" {% if form_campanha.instance.possui_meta %}checked{% endif %}>
+            <span class="text-sm font-medium text-gray-700">Possui Meta?</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white p-6 shadow rounded-lg border border-gray-200">
+      <h3 class="text-lg font-semibold text-purple-700 mb-4">
+        <i class="fa fa-coins mr-2 text-yellow-500"></i> Recebimento e Repasse
+      </h3>
+      <div id="campos-recebimento" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label>Recebido:</label>
+          {{ form_recebimento.recebido|add_class:"border border-gray-400 rounded w-full p-2" }}
+        </div>
+        <div>
+          <label>Tipo valor recebido:</label>
+          {{ form_recebimento.tipo_valor_recebido|add_class:"border border-gray-400 rounded w-full p-2" }}
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div>
+          <label>Parametrizado WB:</label>
+          {{ form_recebimento.parametrizado_wb|add_class:"border border-gray-400 rounded w-full p-2" }}
+        </div>
+        <div>
+          <label>Tipo valor parametrizado WB:</label>
+          {{ form_recebimento.tipo_valor_parametrizado_wb|add_class:"border border-gray-400 rounded w-full p-2" }}
+        </div>
+      </div>
+    </section>
+
+    <section id="meta-formset-wrapper" class="bg-white p-6 rounded-lg shadow border border-gray-200 hidden">
+      <h3 class="text-xl font-semibold text-purple-700 mb-4"><i class="fa fa-bullseye mr-2 text-green-500"></i> Faixas de Meta</h3>
+      {{ faixa_formset.management_form }}
+
+      <div id="faixa-empty-form" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-4 border p-4 rounded-lg relative group bg-gray-50">
+          <div>
+            <label class="text-sm font-medium text-gray-700">Faixa inicial</label>
+            <input type="text" name="faixas-__prefix__-faixa_inicial" class="w-full p-2 border border-gray-300 rounded">
+          </div>
+          <div>
+            <label class="text-sm font-medium text-gray-700">Faixa final</label>
+            <input type="text" name="faixas-__prefix__-faixa_final" class="w-full p-2 border border-gray-300 rounded">
+          </div>
+          <div>
+            <label class="text-sm font-medium text-gray-700">Tipo valor</label>
+            <select name="faixas-__prefix__-tipo_valor" class="w-full p-2 border border-gray-300 rounded">
+              <option value="%">%</option>
+              <option value="R$">R$</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-medium text-gray-700">Valor recebido</label>
+            <input type="text" name="faixas-__prefix__-valor_recebido" class="w-full p-2 border border-gray-300 rounded">
+          </div>
+          <div class="flex items-center justify-start mt-6">
+            <label class="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" name="faixas-__prefix__-faixa_garantida" class="toggle-checkbox">
+              Faixa garantida
             </label>
+          </div>
+          <div class="flex items-start justify-end mt-6">
+            <button type="button" class="remove-faixa-btn hover:bg-red-100 text-red-600 rounded-full p-2 transition">
+              <i class="fas fa-trash-alt"></i>
+              <span class="sr-only">Excluir faixa</span>
+            </button>
+            <input type="checkbox" name="faixas-__prefix__-DELETE" class="hidden">
+          </div>
         </div>
+      </div>
 
-        <div id="meta-formset-wrapper" style="display:none; margin-top:1rem;">
-            {{ faixa_formset.management_form }}   {#  ⬅️ 1. campo TOTAL_FORMS já está aqui  #}
-
-            <div id="formset-container">
-                {% for form in faixa_formset %}
-                    <div class="formset-form" style="border:1px solid #ccc;margin-bottom:1rem;
-                                                     padding:1rem;border-radius:8px;position:relative;">
-                        {{ form.id }}
-                        {{ form.faixa_inicial.label_tag }} {{ form.faixa_inicial }}
-                        {{ form.faixa_final.label_tag }} {{ form.faixa_final }}
-                        {{ form.tipo_valor.label_tag }} {{ form.tipo_valor }}
-                        {{ form.valor_recebido.label_tag }} {{ form.valor_recebido }}
-                        {{ form.faixa_garantida.label_tag }} {{ form.faixa_garantida }}
-                        <button type="button" class="remove-faixa-btn" style="color:red;
-                                position:absolute;top:6px;right:6px;">{{ form.DELETE }}❌ Remover</button>
-                    </div>
-                {% endfor %}
-            </div>
-
-            <button type="button" id="add-faixa-btn">Adicionar Faixa</button>
+      <div id="formset-container" class="space-y-6">
+        {% for form in faixa_formset.forms %}
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-4 border p-4 rounded-lg relative group bg-gray-50">
+          <div>
+            <label class="text-sm font-medium text-gray-700">Faixa inicial</label>
+            {{ form.faixa_inicial|add_class:"w-full p-2 border border-gray-300 rounded" }}
+          </div>
+          <div>
+            <label class="text-sm font-medium text-gray-700">Faixa final</label>
+            {{ form.faixa_final|add_class:"w-full p-2 border border-gray-300 rounded" }}
+          </div>
+          <div>
+            <label class="text-sm font-medium text-gray-700">Tipo valor</label>
+            {{ form.tipo_valor|add_class:"w-full p-2 border border-gray-300 rounded" }}
+          </div>
+          <div>
+            <label class="text-sm font-medium text-gray-700">Valor recebido</label>
+            {{ form.valor_recebido|add_class:"w-full p-2 border border-gray-300 rounded" }}
+          </div>
+          <div class="flex items-center justify-start mt-6">
+            <label class="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" name="{{ form.faixa_garantida.html_name }}" id="{{ form.faixa_garantida.id_for_label }}" class="toggle-checkbox" {% if form.faixa_garantida.value %}checked{% endif %}>
+              Faixa garantida
+            </label>
+          </div>
+          <div class="flex items-start justify-end mt-6">
+            <button type="button" class="remove-faixa-btn hover:bg-red-100 text-red-600 rounded-full p-2 transition">
+              <i class="fas fa-trash-alt"></i>
+              <span class="sr-only">Excluir faixa</span>
+            </button>
+            {{ form.DELETE.as_hidden }} <!-- 🔥 Essencial para deletar -->
+          </div>
         </div>
-    </fieldset>
+        {% endfor %}
+      </div>
 
-    <fieldset>
-        <legend><strong>Vigência e Regras</strong></legend>
-        {{ form_vigencia.as_p }}
-    </fieldset>
+      <button type="button" id="add-faixa-btn" class="mt-4 bg-purple-100 hover:bg-purple-200 text-purple-800 px-4 py-2 rounded">
+        + Adicionar Meta
+      </button>
+    </section>
 
-    <button type="submit">Salvar Campanha</button>
-</form>
+    <section class="bg-white p-6 rounded-lg shadow border border-gray-200">
+      <h3 class="text-xl font-semibold text-purple-700 mb-4"><i class="fa fa-calendar-alt mr-2 text-blue-500"></i> Vigência e Regras</h3>
+      <div class="grid md:grid-cols-2 gap-6">
+        {% for field in form_vigencia.visible_fields %}
+        <div>
+          <label class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+          {{ field|add_class:"w-full p-2 border border-gray-300 rounded" }}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <div class="text-right">
+      <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold">
+        Salvar Campanha
+      </button>
+    </div>
+  </form>
+</div>
 
 <script>
+  document.addEventListener('DOMContentLoaded', function () {
     const possuiMetaCheckbox = document.getElementById('id_possui_meta');
     const metaWrapper = document.getElementById('meta-formset-wrapper');
-    const recebimentoCampos = document.getElementById('recebimento-campos');
-
-    function toggleCamposMeta() {
-        const show = possuiMetaCheckbox.checked;
-        metaWrapper.style.display = show ? 'block' : 'none';
-        if (recebimentoCampos) {
-            recebimentoCampos.style.display = show ? 'none' : 'block';
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        toggleCamposMeta();
-        attachRemoveEvents();
-    });
-
-    possuiMetaCheckbox.addEventListener('change', toggleCamposMeta);
-
+    const recebimentoCampos = document.getElementById('campos-recebimento');
     const formsetContainer = document.getElementById('formset-container');
     const addButton = document.getElementById('add-faixa-btn');
-    const totalFormsInput = document.getElementById('id_faixas-TOTAL_FORMS');   // ⬅️ 2. usa o real TOTAL_FORMS
+    const totalFormsInput = document.getElementById('id_faixas-TOTAL_FORMS');
+    const emptyFormTemplate = document.getElementById('faixa-empty-form')?.innerHTML;
 
-    addButton.addEventListener('click', function () {
-        const currentFormCount = parseInt(totalFormsInput.value);
-        const newFormHtml = formsetContainer.children[0].outerHTML
-            .replace(/faixas-(\d+)/g, `faixas-${currentFormCount}`);
-        formsetContainer.insertAdjacentHTML('beforeend', newFormHtml);
-        totalFormsInput.value = currentFormCount + 1;      // atualiza o campo certo ✔️
-        attachRemoveEvents();
-    });
+    function toggleCamposMeta() {
+      if (!possuiMetaCheckbox) return;
+      const show = possuiMetaCheckbox.checked;
+      metaWrapper.classList.toggle('hidden', !show);
+      recebimentoCampos.style.display = show ? 'none' : 'grid';
+    }
 
     function attachRemoveEvents() {
-        document.querySelectorAll('.remove-faixa-btn').forEach(function (btn) {
-            btn.onclick = function () {
-                const formDiv = btn.closest('.formset-form');
-                const deleteCheckbox = formDiv.querySelector('input[type="checkbox"][name$="-DELETE"]');
-                if (deleteCheckbox) {
-                    deleteCheckbox.checked = true;
-                    formDiv.style.display = 'none';
-                }
-            };
-        });
+  document.querySelectorAll('.remove-faixa-btn').forEach(function (btn) {
+    btn.onclick = function () {
+      const formDiv = btn.closest('.grid');
+      const deleteHiddenInput = formDiv.querySelector('input[type="hidden"][name$="-DELETE"]');
+      if (deleteHiddenInput) {
+        deleteHiddenInput.value = 'on'; // Marca como deletado
+        formDiv.style.display = 'none'; // Some da interface
+      }
+    };
+  });
+}
+
+    if (possuiMetaCheckbox) {
+      toggleCamposMeta();
+      possuiMetaCheckbox.addEventListener('change', toggleCamposMeta);
     }
+
+    attachRemoveEvents();
+
+    if (addButton && emptyFormTemplate) {
+      addButton.addEventListener('click', function () {
+        const currentFormCount = parseInt(totalFormsInput.value);
+        const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, currentFormCount);
+        formsetContainer.insertAdjacentHTML('beforeend', newFormHtml);
+        totalFormsInput.value = currentFormCount + 1;
+        attachRemoveEvents();
+      });
+    }
+  });
 </script>
 {% endblock %}

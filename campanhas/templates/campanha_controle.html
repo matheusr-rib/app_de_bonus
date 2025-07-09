@@ -2,35 +2,95 @@
 {% block title %}Controle de Campanhas{% endblock %}
 
 {% block content %}
-<h2>🎛️ Controle de Campanhas</h2>
+<h2 class="text-3xl font-bold text-purple-800 mb-8">Controle de Campanhas</h2>
+<form method="get" class="bg-white p-6 mb-8 border border-gray-200 shadow rounded-lg">
+  <div class="grid md:grid-cols-4 gap-4">
+    <!-- Filtro nome da campanha -->
+    <input type="text" name="nome" placeholder="🔍 Nome da campanha"
+           value="{{ filtro_nome }}"
+           class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600" />
 
-<table style="width: 100%; border-collapse: collapse; margin-top: 1.5rem;">
-  <thead>
-    <tr style="background-color: #f0f0f0;">
-      <th style="padding: 10px;">Campanha</th>
-      <th>Banco</th>
-      <th>Status</th>
-      <th>Início</th>
-      <th>Fim</th>
-      <th>Ações</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for campanha in campanhas %}
-      <tr style="border-bottom: 1px solid #ccc;">
-        <td style="padding: 10px;">{{ campanha.campanha }}</td>
-        <td>{{ campanha.banco }}</td>
-        <td>{{ campanha.status_manual }}</td>
-        <td>{{ campanha.vigencia_inicio|date:"d/m/Y" }}</td>
-        <td>{{ campanha.vigencia_fim|date:"d/m/Y" }}</td>
-        <td>
-          <a href="{% url 'campanha_editar' campanha.pk %}" class="btn btn-sm btn-outline-primary">✏️ Editar</a>
-          <a href="{% url 'campanha_deletar' campanha.pk %}" class="btn btn-sm btn-outline-danger">🗑️ Deletar</a>
-        </td>
+    <!-- Filtro banco -->
+    <input type="text" name="banco" placeholder="🏦 Nome do banco"
+           value="{{ filtro_banco }}"
+           class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600" />
+
+    <!-- Filtro status -->
+    <select name="status"
+            class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600">
+      <option value="todas">Todos os status</option>
+      {% for status in status_opcoes %}
+        <option value="{{ status }}" {% if filtro_status == status %}selected{% endif %}>{{ status }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Botão filtrar -->
+    <div class="text-right md:col-span-1 flex items-end">
+      <button type="submit"
+              class="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700 transition w-full">
+        Filtrar
+      </button>
+    </div>
+  </div>
+</form>
+<div class="overflow-x-auto">
+  <table class="min-w-full bg-white shadow border border-gray-200 rounded-lg overflow-hidden">
+    <thead class="bg-gray-100 text-gray-700 text-sm uppercase tracking-wider">
+      <tr>
+        <th class="px-6 py-3 text-left">Campanha</th>
+        <th class="px-6 py-3 text-left">Banco</th>
+        <th class="px-6 py-3 text-left">Status</th>
+        <th class="px-6 py-3 text-left">Início</th>
+        <th class="px-6 py-3 text-left">Fim</th>
+        <th class="px-6 py-3 text-left">Ações</th>
       </tr>
-    {% empty %}
-      <tr><td colspan="6">Nenhuma campanha cadastrada.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+    </thead>
+    <tbody class="text-gray-800 text-sm divide-y divide-gray-200">
+      {% for campanha in campanhas %}
+        <tr class="hover:bg-gray-50 transition">
+          <td class="px-6 py-4 font-semibold">{{ campanha.campanha }}</td>
+          <td class="px-6 py-4">{{ campanha.banco }}</td>
+          <td class="px-6 py-4">
+            <span class="inline-block px-2 py-1 text-xs font-medium rounded-full
+              {% if campanha.status_manual == 'ATIVA' %}
+                bg-green-100 text-green-700
+              {% elif campanha.status_manual == 'EM ANALISE' %}
+                bg-yellow-100 text-yellow-800
+              {% elif campanha.status_manual == 'INATIVA' %}
+                bg-red-100 text-red-700
+              {% else %}
+                bg-gray-100 text-gray-600
+              {% endif %}
+            ">
+              {{ campanha.status_manual }}
+            </span>
+          </td>
+          <td class="px-6 py-4">{{ campanha.vigencia_inicio|date:"d/m/Y" }}</td>
+          <td class="px-6 py-4">
+            {% if campanha.vigencia_fim %}
+              {{ campanha.vigencia_fim|date:"d/m/Y" }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td class="px-6 py-4 flex gap-2">
+            <a href="{% url 'campanha_editar' campanha.id %}"
+               class="bg-indigo-600 text-white text-sm px-4 py-2 rounded hover:bg-indigo-700 transition font-semibold">
+              Editar
+            </a>
+             <a href="{% url 'campanha_deletar' campanha.id %}"
+        
+              class="bg-red-600 text-white text-sm px-4 py-2 rounded hover:bg-red-700 transition font-semibold">
+              Deletar
+              </a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" class="text-center text-gray-500 px-6 py-4">Nenhuma campanha cadastrada.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}

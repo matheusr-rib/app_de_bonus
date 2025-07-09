@@ -5,6 +5,7 @@ from .decorators import tipo_usuario_requerido
 from .models import Usuario
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from .forms import UsuarioCreateForm
 
 class LoginCustomView(LoginView):
     template_name = 'login.html'
@@ -24,18 +25,37 @@ class LoginCustomView(LoginView):
 @login_required(login_url='login')
 @tipo_usuario_requerido('master')
 def admin_usuarios_view(request):
-    if request.method == 'POST':
-        user_id = request.POST.get('user_id')
-        novo_tipo = request.POST.get('tipo')
-        try:
-            user = Usuario.objects.get(id=user_id)
-            if user.tipo != novo_tipo:
-                user.tipo = novo_tipo
-                user.save()
-                messages.success(request, f"Permissão de {user.username} alterada para {novo_tipo}.")
-        except Usuario.DoesNotExist:
-            messages.error(request, "Usuário não encontrado.")
-        return redirect('admin_usuarios')
-
     usuarios = Usuario.objects.exclude(id=request.user.id)
-    return render(request, 'admin_usuarios.html', {'usuarios': usuarios})
+
+    if request.method == 'POST':
+        if 'user_id' in request.POST:
+            # Atualização de tipo
+            user_id = request.POST.get('user_id')
+            novo_tipo = request.POST.get('tipo')
+            try:
+                user = Usuario.objects.get(id=user_id)
+                if user.tipo != novo_tipo:
+                    user.tipo = novo_tipo
+                    user.save()
+                    messages.success(request, f"Permissão de {user.username} alterada para {novo_tipo}.")
+            except Usuario.DoesNotExist:
+                messages.error(request, "Usuário não encontrado.")
+            return redirect('admin_usuarios')
+
+        else:
+            # Criação de usuário
+            form_criacao = UsuarioCreateForm(request.POST)
+            if form_criacao.is_valid():
+                form_criacao.save()
+                messages.success(request, "Usuário criado com sucesso.")
+                return redirect('admin_usuarios')
+            else:
+                return render(request, 'admin_usuarios.html', {
+                    'usuarios': usuarios,
+                    'form_criacao': form_criacao
+                })
+
+    return render(request, 'admin_usuarios.html', {
+        'usuarios': usuarios,
+        'form_criacao': UsuarioCreateForm()
+    })

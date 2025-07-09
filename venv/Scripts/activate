@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="C:\Users\reisr\OneDrive\Documentos\meuappbonus\app_de_bonus\venv"
+VIRTUAL_ENV="C:\Users\reisr\Downloads\CommitResetado\app_de_bonus\venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

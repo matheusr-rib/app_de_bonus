@@ -2,152 +2,116 @@
 {% block title %}Campanhas{% endblock %}
 
 {% block content %}
-<h2>Campanhas Cadastradas</h2>
 
-<!-- 🔍 Filtros -->
-<form method="get" style="display: flex; gap: 1rem; align-items: flex-end; margin-bottom: 1.5rem; flex-wrap: wrap;">
-  <div>
-    <label for="id_q">🔍 Buscar por nome da campanha/banco</label><br>
-    <input type="text" name="q" id="id_q" value="{{ q }}" placeholder="Digite aqui..." style="padding: 6px; border-radius: 6px; border: 1px solid #ccc; min-width: 250px;">
-  </div>
+<h1 class="text-3xl font-semibold text-purple-700 mb-6">Campanhas</h1>
 
-  <div>
-    <label for="id_status">📌 Filtrar por status</label><br>
-    <select name="status" id="id_status"
-        style="padding: 6px; border-radius: 6px; border: 1px solid #ccc;">
-        <option value="todas"        {% if status == 'todas' %}selected{% endif %}>Todas</option>
-        <option value="ATIVA"        {% if status == 'ATIVA' %}selected{% endif %}>Ativa</option>
-        <option value="EM ANALISE"   {% if status == 'EM ANALISE' %}selected{% endif %}>Em análise</option>
+<!-- Filtros -->
+<form method="get" class="bg-white p-6 mb-8 border border-gray-200 shadow rounded-lg">
+  <div class="grid md:grid-cols-4 gap-4">
+    <input type="text" name="nome" placeholder="🔍 Nome da campanha"
+           value="{{ filtro_nome }}"
+           class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600" />
+
+    <input type="text" name="banco" placeholder="🏦 Nome do banco"
+           value="{{ filtro_banco }}"
+           class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600" />
+
+    <select name="status"
+            class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600">
+      <option value="todas">Todos os status</option>
+      {% for status in status_labels %}
+        <option value="{{ status }}" {% if filtro_status == status %}selected{% endif %}>{{ status }}</option>
+      {% endfor %}
     </select>
-  </div>
 
-  <div>
-    <button type="submit" style="padding: 6px 14px; background: #4c51bf; color: #fff; border: none; border-radius: 6px;">Filtrar</button>
+    <div class="text-right md:col-span-1 flex items-end">
+      <button type="submit"
+              class="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700 transition w-full">
+        Filtrar
+      </button>
+    </div>
   </div>
 </form>
 
-<!-- Estilo para cards -->
+<!-- Agrupamento por status -->
+{% for status_label in status_labels %}
+  <h2 class="text-xl font-semibold text-purple-600 mt-6 mb-4">{{ status_label|title }}</h2>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for campanha in campanhas %}
+      {% if campanha.status_manual == status_label %}
+        <div class="card bg-white shadow rounded-lg p-4 relative transition hover:shadow-xl">
+
+          <!-- Conteúdo fixo -->
+          <h3 class="text-lg font-bold text-purple-700 mb-2">{{ campanha.campanha }}</h3>
+          <p><strong>Banco:</strong> {{ campanha.banco }}</p>
+          <p><strong>Status:</strong> {{ campanha.status_manual }}</p>
+          <p><strong>Recebido:</strong>
+            {% if campanha.faixas.exists %}
+              Possui meta
+            {% else %}
+              {{ campanha.recebido|default:"-" }} {{ campanha.tipo_valor_recebido }}
+            {% endif %}
+          </p>
+          <p><strong>Parametrizado:</strong>
+            {{ campanha.parametrizado_wb|default:"-" }} {{ campanha.tipo_valor_parametrizado_wb|default:"" }}
+          </p>
+
+          <!-- "Detalhes" fixo -->
+          <div class="mt-4 text-center text-purple-500 font-semibold text-sm">Detalhes</div>
+
+          <!-- Detalhes no hover -->
+          <div class="detalhes mt-2 bg-purple-50 p-2 rounded-md">
+            <p><strong>Nomenclatura WB:</strong> {{ campanha.nomenclatura_wb }}</p>
+
+            {% if campanha.faixas.exists %}
+              <p><strong>Faixas:</strong></p>
+              <ul class="list-disc pl-5 mb-2 text-sm">
+                {% for faixa in campanha.faixas.all %}
+                  <li>
+                    {% if faixa.faixa_final %}
+                      R$ {{ faixa.faixa_inicial|floatformat:2 }} a R$ {{ faixa.faixa_final|floatformat:2 }} →
+                      Comissão: {{ faixa.valor_recebido|floatformat:2 }} {{ faixa.tipo_valor }}
+                    {% else %}
+                      Acima de R$ {{ faixa.faixa_inicial|floatformat:2 }} →
+                      Comissão: {{ faixa.valor_recebido|floatformat:2 }} {{ faixa.tipo_valor }}
+                    {% endif %}
+                    {% if faixa.faixa_garantida %}<em>(Faixa Garantida)</em>{% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+
+            <p><strong>Vigência:</strong> {{ campanha.vigencia_inicio|date:"d/m/Y" }} até {{ campanha.vigencia_fim|date:"d/m/Y" }}</p>
+            <p><strong>Periodicidade:</strong> {{ campanha.periodicidade_repasses }}</p>
+            <p><strong>Previsão Pagamento:</strong> {{ campanha.previsao_pagamento }}</p>
+            <p><strong>Parâmetro Avaliação:</strong> {{ campanha.parametro_avaliacao }}</p>
+            <p><strong>Critério Apuração:</strong> {{ campanha.criterio_apuracao }}</p>
+            {% if campanha.observacoes %}
+              <p><strong>Observações:</strong> {{ campanha.observacoes }}</p>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endfor %}
+
+<!-- CSS local -->
 <style>
-  .grid-campanhas {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1rem;
-  }
-
-  .card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
-    padding: 1.2rem;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .card h3 {
-    margin-top: 0;
-    font-size: 1.2rem;
-    color: #333;
-  }
-
-  .card p {
-    margin: 0.3rem 0;
-    font-size: 0.95rem;
-    color: #555;
-  }
-
-  .detalhes-hover {
+  .card .detalhes {
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.4s ease, padding 0.4s ease;
-    background: #f7f2fa;
-    margin-top: 1rem;
-    padding: 0 1rem;
-    border-radius: 8px;
+    transition: max-height 0.5s ease, padding 0.5s ease;
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
-  .card:hover .detalhes-hover {
-    max-height: 500px;
-    padding: 1rem;
-  }
-
-  .detalhes-hover h4 {
-    margin-top: 0;
-    color: #6200ea;
-    font-size: 1rem;
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 4px;
-  }
-
-  .detalhes-hover p {
-    margin-bottom: 6px;
-    font-size: 0.9rem;
-  }
-
-  .faixa-meta {
-    padding-left: 1rem;
-    list-style: disc;
-    margin-bottom: 1rem;
+  .card:hover .detalhes {
+    max-height: 1000px;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
   }
 </style>
 
-<!-- Lista de campanhas -->
-<div class="grid-campanhas">
-  {% for campanha in campanhas %}
-    <div class="card">
-      <h3>{{ campanha.campanha }}</h3>
-      <p><strong>Banco:</strong> {{ campanha.banco }}</p>
-      <p><strong>Status:</strong> {{ campanha.status_manual }}</p>
-      <p><strong>Recebido:</strong>
-        {% if campanha.faixas.exists %}
-          Possui meta
-        {% else %}
-          {{ campanha.recebido|default:"-" }}
-          {{ campanha.tipo_valor_recebido }}
-        {% endif %}
-      </p>
-      <p><strong>Parametrizado:</strong> 
-        {{ campanha.parametrizado_wb|default:"-" }}  
-        {{ campanha.tipo_valor_parametrizado_wb }}
-      </p>
-
-      <div class="detalhes-hover">
-        <h4>Detalhes adicionais</h4>
-        <p><strong>Nomenclatura WB:</strong> {{ campanha.nomenclatura_wb }}</p>
-
-        {% if campanha.faixas.exists %}
-          <p><strong>Faixas:</strong></p>
-          <ul class="faixa-meta">
-            {% for faixa in campanha.faixas.all %}
-              <li>
-                {% if faixa.faixa_final %}
-                  R$ {{ faixa.faixa_inicial|floatformat:2 }} a R$ {{ faixa.faixa_final|floatformat:2 }} → Comissão: {{ faixa.valor_recebido|floatformat:2 }} {{ faixa.tipo_valor }}
-                {% else %}
-                  Acima de R$ {{ faixa.faixa_inicial|floatformat:2 }} → Comissão: {{ faixa.valor_recebido|floatformat:2 }} {{ faixa.tipo_valor }}
-                {% endif %}
-                {% if faixa.faixa_garantida %}
-                  <em>(Faixa Garantida)</em>
-                {% endif %}
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p><strong>Faixas:</strong> Nenhuma cadastrada</p>
-        {% endif %}
-
-        <p><strong>Vigência:</strong> {{ campanha.vigencia_inicio|date:"d/m/Y" }} até {{ campanha.vigencia_fim|date:"d/m/Y" }}</p>
-        <p><strong>Periodicidade:</strong> {{ campanha.periodicidade_repasses }}</p>
-        <p><strong>Previsão Pagamento:</strong> {{ campanha.previsao_pagamento }}</p>
-        <p><strong>Parâmetro Avaliação:</strong> {{ campanha.parametro_avaliacao }}</p>
-        <p><strong>Critério Apuração:</strong> {{ campanha.criterio_apuracao }}</p>
-        {% if campanha.observacoes %}
-          <p><strong>Observações:</strong> {{ campanha.observacoes }}</p>
-        {% endif %}
-      </div>
-    </div>
-  {% empty %}
-    <p>Nenhuma campanha cadastrada ainda.</p>
-  {% endfor %}
-</div>
 {% endblock %}

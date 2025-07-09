@@ -5,7 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from usuarios.decorators import tipo_usuario_requerido
 from django.db.models import Q
-
+from historico.models import HistoricoAcao
+from django.contrib.auth import get_user_model
 from .models import Campanha
 from .forms import (
     CampanhaBaseForm,
@@ -42,6 +43,12 @@ class CampanhaListView(ListView):
         context = super().get_context_data(**kwargs)
         context['q'] = self.request.GET.get('q', '')
         context['status'] = self.request.GET.get('status', 'todas')
+        context['status_labels'] = (
+            self.get_queryset()
+            .values_list('status_manual', flat=True)
+            .distinct()
+            .order_by('status_manual')
+        )
         return context
 
 
@@ -139,20 +146,16 @@ class CampanhaUpdateView(View):
 
     def post(self, request, pk):
         campanha = get_object_or_404(Campanha, pk=pk)
+
         form_campanha = CampanhaBaseForm(request.POST, instance=campanha)
         form_recebimento = Recebimento_E_Repasse(request.POST, instance=campanha)
         form_vigencia = VigenciaERegras(request.POST, instance=campanha)
-        faixa_formset = FaixaMetaFormSet(request.POST, instance=campanha, prefix='faixas')
         possui_meta = request.POST.get('possui_meta') == 'on'
 
-        if all([
-            form_campanha.is_valid(),
-            form_recebimento.is_valid(),
-            form_vigencia.is_valid(),
-            faixa_formset.is_valid()
-        ]):
+        if form_campanha.is_valid() and form_recebimento.is_valid() and form_vigencia.is_valid():
             campanha = form_campanha.save(commit=False)
 
+            # Campos adicionais
             campanha.recebido = form_recebimento.cleaned_data.get('recebido')
             campanha.parametrizado_wb = form_recebimento.cleaned_data.get('parametrizado_wb')
             campanha.tipo_valor_recebido = form_recebimento.cleaned_data.get('tipo_valor_recebido')
@@ -170,18 +173,33 @@ class CampanhaUpdateView(View):
             campanha.possui_meta = possui_meta
             campanha.save()
 
+            # 🔁 AGORA instanciamos o formset com a instância salva
+            faixa_formset = FaixaMetaFormSet(request.POST, instance=campanha, prefix='faixas')
+
             if possui_meta:
-                faixa_formset.save()
+                if faixa_formset.is_valid():
+                    faixa_formset.save()
+                else:
+                    # Retorna com erros
+                    return render(request, self.template_name, {
+                        'form_campanha': form_campanha,
+                        'form_recebimento': form_recebimento,
+                        'form_vigencia': form_vigencia,
+                        'faixa_formset': faixa_formset
+                    })
+            else:
+                campanha.faixas.all().delete()
 
             return redirect('campanha_list')
 
+        # Se algum form principal for inválido
+        faixa_formset = FaixaMetaFormSet(request.POST, instance=campanha, prefix='faixas')
         return render(request, self.template_name, {
             'form_campanha': form_campanha,
             'form_recebimento': form_recebimento,
             'form_vigencia': form_vigencia,
             'faixa_formset': faixa_formset
         })
-
 
 @method_decorator(login_required(login_url='login'), name='dispatch')
 @method_decorator(tipo_usuario_requerido('master', 'editor'), name='dispatch')
@@ -192,13 +210,24 @@ class CampanhaDeleteView(DeleteView):
 
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
-        
-        # Apaga as faixas ligadas primeiro
+
+        # 💾 Salvar o histórico ANTES da exclusão
+        if request.user.is_authenticated:
+            HistoricoAcao.objects.create(
+            campanha=None,  # campanha vai virar nula após exclusão
+            campanha_nome=self.object.campanha,
+            usuario=request.user,
+            acao='deletado',
+            detalhe="Campanha deletada via interface web",
+            vigencia_inicio=self.object.vigencia_inicio,
+            vigencia_fim=self.object.vigencia_fim,
+            )
+
+        # Deleta faixas relacionadas primeiro
         self.object.faixas.all().delete()
 
-        # Agora pode deletar a campanha
-        self.object.delete()
-        return redirect(self.success_url)
+        # Agora deleta a campanha
+        return super().delete(request, *args, **kwargs)
 
 
 @method_decorator(login_required, name='dispatch')
@@ -207,3 +236,26 @@ class CampanhaControleView(ListView):
     model = Campanha
     template_name = 'campanha_controle.html'
     context_object_name = 'campanhas'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        nome = self.request.GET.get('nome')
+        banco = self.request.GET.get('banco')
+        status = self.request.GET.get('status')
+
+        if nome:
+            queryset = queryset.filter(campanha__icontains=nome)
+        if banco:
+            queryset = queryset.filter(banco__nome__icontains=banco)
+        if status and status != 'todas':
+            queryset = queryset.filter(status_manual__iexact=status)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filtro_nome'] = self.request.GET.get('nome', '')
+        context['filtro_banco'] = self.request.GET.get('banco', '')
+        context['filtro_status'] = self.request.GET.get('status', 'todas')
+        context['status_opcoes'] = Campanha.objects.values_list('status_manual', flat=True).distinct()
+        return context

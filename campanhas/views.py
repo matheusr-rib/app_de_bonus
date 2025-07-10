@@ -6,7 +6,6 @@ from django.utils.decorators import method_decorator
 from usuarios.decorators import tipo_usuario_requerido
 from django.db.models import Q
 from historico.models import HistoricoAcao
-from django.contrib.auth import get_user_model
 from .models import Campanha
 from .forms import (
     CampanhaBaseForm,
@@ -150,7 +149,8 @@ class CampanhaUpdateView(View):
         form_campanha = CampanhaBaseForm(request.POST, instance=campanha)
         form_recebimento = Recebimento_E_Repasse(request.POST, instance=campanha)
         form_vigencia = VigenciaERegras(request.POST, instance=campanha)
-        possui_meta = request.POST.get('possui_meta') == 'on'
+        possui_meta = 'possui_meta' in request.POST or campanha.possui_meta
+        faixa_formset = FaixaMetaFormSet(request.POST, instance=campanha, prefix='faixas')
 
         if form_campanha.is_valid() and form_recebimento.is_valid() and form_vigencia.is_valid():
             campanha = form_campanha.save(commit=False)
@@ -180,7 +180,9 @@ class CampanhaUpdateView(View):
                 if faixa_formset.is_valid():
                     faixa_formset.save()
                 else:
-                    # Retorna com erros
+                    print('📛 Formset inválido:')
+                    print(faixa_formset.errors)
+                    print(faixa_formset.non_form_errors())
                     return render(request, self.template_name, {
                         'form_campanha': form_campanha,
                         'form_recebimento': form_recebimento,

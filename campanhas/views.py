@@ -23,32 +23,40 @@ class CampanhaListView(ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        nome = self.request.GET.get('nome')
+        banco = self.request.GET.get('banco')
+        status = self.request.GET.get('status')
 
-        termo_busca = self.request.GET.get('q')
-        status_filtro = self.request.GET.get('status')
-
-        if termo_busca:
-            queryset = queryset.filter(
-                Q(campanha__icontains=termo_busca) |
-                Q(banco__nome__icontains=termo_busca)
-            )
-
-        if status_filtro and status_filtro != 'todas':
-            queryset = queryset.filter(status_manual__iexact=status_filtro)
+        if nome:
+            queryset = queryset.filter(campanha__icontains=nome)
+        if banco:
+            queryset = queryset.filter(banco__nome__icontains=banco)
+        if status and status != 'todas':
+            queryset = queryset.filter(status_manual__iexact=status)
 
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['q'] = self.request.GET.get('q', '')
-        context['status'] = self.request.GET.get('status', 'todas')
+
+        # Captura os valores dos filtros atuais
+        nome = self.request.GET.get('nome', '')
+        banco = self.request.GET.get('banco', '')
+        status = self.request.GET.get('status', 'todas')
+
+        context['filtro_nome'] = nome
+        context['filtro_banco'] = banco
+        context['filtro_status'] = status
+
+        # Garante que todos os status estejam disponíveis no select
         context['status_labels'] = (
-            self.get_queryset()
+            Campanha.objects
             .values_list('status_manual', flat=True)
             .distinct()
             .order_by('status_manual')
         )
         return context
+
 
 
 @method_decorator(login_required(login_url='login'), name='dispatch')

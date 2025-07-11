@@ -218,17 +218,19 @@
     }
 
     function attachRemoveEvents() {
-  document.querySelectorAll('.remove-faixa-btn').forEach(function (btn) {
-    btn.onclick = function () {
-      const formDiv = btn.closest('.grid');
-      const deleteHiddenInput = formDiv.querySelector('input[type="hidden"][name$="-DELETE"]');
-      if (deleteHiddenInput) {
-        deleteHiddenInput.value = 'on'; // Marca como deletado
-        formDiv.style.display = 'none'; // Some da interface
-      }
-    };
-  });
-}
+      document.querySelectorAll('.remove-faixa-btn').forEach(function (btn) {
+        btn.onclick = function () {
+          const formDiv = btn.closest('.grid');
+          const deleteInput = formDiv.querySelector('input[name$="-DELETE"]');
+          if (deleteInput) {
+            deleteInput.setAttribute('checked', 'checked');
+            deleteInput.checked = true;
+            deleteInput.value = 'on';  // 🔥 Garante que será enviado no POST
+            formDiv.style.display = 'none';
+          }
+        };
+      });
+    }
 
     if (possuiMetaCheckbox) {
       toggleCamposMeta();
@@ -248,4 +250,5 @@
     }
   });
 </script>
+
 {% endblock %}

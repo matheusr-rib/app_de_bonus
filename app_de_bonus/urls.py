@@ -26,7 +26,8 @@ from campanhas.views import (
     CampanhaUpdateView,
     CampanhaDeleteView
 )
-from historico.views import historico_listagem
+from historico.views import historico_listagem, exportar_relatorio_excel, relatorios_campanha
+
 from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
@@ -40,5 +41,8 @@ urlpatterns = [
     path('campanhas/<int:pk>/editar/', CampanhaUpdateView.as_view(), name='campanha_editar'),
     path('campanhas/<int:pk>/deletar/', CampanhaDeleteView.as_view(), name='campanha_deletar'),
     path('historico/', historico_listagem, name='historico_listagem'),
+    path('relatorios/', relatorios_campanha, name='relatorios_campanha'),
+    path('relatorios/exportar/', exportar_relatorio_excel, name='exportar_relatorio_excel'),
+
 
 ]

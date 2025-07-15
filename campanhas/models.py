@@ -28,15 +28,17 @@ class Campanha(models.Model):
     parametrizado_wb = models.CharField(max_length=200, default=' ', blank=True, null=True)
     tipo_valor_recebido = models.CharField(max_length=20, choices=TIPO_VALOR_CHOICES, default='%', blank=True, null=True)
     tipo_valor_parametrizado_wb = models.CharField(max_length=20, choices=TIPO_VALOR_CHOICES, default=' ', blank=True, null=True)
+    inativada_automaticamente = models.BooleanField(default=False)
+
 
     vigencia_inicio = models.DateField(default=timezone.now)
     vigencia_fim = models.DateField(blank=True, null=True)
-    periodicidade_repasses = models.CharField(max_length=100, default=' ')
+    periodicidade_repasses = models.CharField(max_length=100,blank=True, null=True)
     previsao_pagamento = models.CharField(max_length=100,blank=True, null=True)
-    parametro_avaliacao = models.TextField(default=' ')
-    criterio_apuracao = models.TextField(default=' ')
+    parametro_avaliacao = models.TextField(default=' ',blank=True, null=True)
+    criterio_apuracao = models.TextField(default=' ',blank=True, null=True)
     observacoes = models.TextField(blank=True, null=True)
-
+    parametro_pagamento = models.TextField(blank=True, null=True)
     possui_meta = models.BooleanField(default=False)
     tem_garantido = models.BooleanField(default=False)
 

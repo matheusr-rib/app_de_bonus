@@ -181,19 +181,55 @@
     </section>
 
     <section class="bg-white p-6 rounded-lg shadow border border-gray-200">
-      <h3 class="text-xl font-semibold text-purple-700 mb-4"><i class="fa fa-calendar-alt mr-2 text-blue-500"></i> Vigência e Regras</h3>
-      <div class="grid md:grid-cols-2 gap-6">
-        {% for field in form_vigencia.visible_fields %}
+            <div class="grid md:grid-cols-2 gap-6">
         <div>
-          <label class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
-          {{ field|add_class:"w-full p-2 border border-gray-300 rounded" }}
+          <label class="block text-sm font-medium text-gray-700">Vigência início</label>
+          {{ form_vigencia.vigencia_inicio|add_class:"w-full p-2 border border-gray-300 rounded" }}
         </div>
-        {% endfor %}
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Vigência fim</label>
+          {{ form_vigencia.vigencia_fim|add_class:"w-full p-2 border border-gray-300 rounded" }}
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Periodicidade repasses</label>
+          {{ form_vigencia.periodicidade_repasses|add_class:"w-full p-2 border border-gray-300 rounded" }}
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Previsão pagamento</label>
+          {{ form_vigencia.previsao_pagamento|add_class:"w-full p-2 border border-gray-300 rounded" }}
+        </div>
+
+        <!-- Parametro Avaliacao ocupa toda a largura -->
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700">Parâmetro avaliação</label>
+          {{ form_vigencia.parametro_avaliacao|add_class:"w-full p-2 border border-gray-300 rounded" }}
+        </div>
+
+        <!-- Critério apuração + Parâmetro pagamento lado a lado -->
+        <div class="md:col-span-2 grid md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Critério apuração</label>
+            {{ form_vigencia.criterio_apuracao|add_class:"w-full p-2 border border-gray-300 rounded" }}
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Parâmetro pagamento</label>
+            {{ form_vigencia.parametro_pagamento|add_class:"w-full p-2 border border-gray-300 rounded" }}
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Observações</label>
+          {{ form_vigencia.observacoes|add_class:"w-full p-2 border border-gray-300 rounded" }}
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Status manual</label>
+          {{ form_vigencia.status_manual|add_class:"w-full p-2 border border-gray-300 rounded" }}
+        </div>
       </div>
     </section>
 
     <div class="text-right">
-      <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold">
+      <button type="submit" class="mt-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium shadow transition">
         Salvar Campanha
       </button>
     </div>

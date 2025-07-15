@@ -6,6 +6,7 @@ from django.utils.decorators import method_decorator
 from usuarios.decorators import tipo_usuario_requerido
 from django.db.models import Q
 from historico.models import HistoricoAcao
+from .services import atualizar_campanhas_expiradas
 from .models import Campanha
 from .forms import (
     CampanhaBaseForm,
@@ -22,41 +23,75 @@ class CampanhaListView(ListView):
     context_object_name = 'campanhas'
 
     def get_queryset(self):
+        atualizar_campanhas_expiradas()
+
         queryset = super().get_queryset()
+
         nome = self.request.GET.get('nome')
         banco = self.request.GET.get('banco')
         status = self.request.GET.get('status')
+        data_inicio = self.request.GET.get('vigencia_inicio')
+        data_fim = self.request.GET.get('vigencia_fim')
 
         if nome:
             queryset = queryset.filter(campanha__icontains=nome)
+
         if banco:
             queryset = queryset.filter(banco__nome__icontains=banco)
-        if status and status != 'todas':
+
+        # Aplica status padrão se nada for informado
+        if status is None:
+            queryset = queryset.filter(status_manual__iexact='ATIVA')
+        elif status != 'todas':
             queryset = queryset.filter(status_manual__iexact=status)
 
-        return queryset
+        if data_inicio and data_fim:
+            queryset = queryset.filter(
+                vigencia_inicio__lte=data_fim,
+                vigencia_fim__gte=data_inicio
+            )
+        elif data_inicio:
+            queryset = queryset.filter(vigencia_fim__gte=data_inicio)
+        elif data_fim:
+            queryset = queryset.filter(vigencia_inicio__lte=data_fim)
+
+        return queryset.order_by('banco__nome', 'campanha')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Captura os valores dos filtros atuais
-        nome = self.request.GET.get('nome', '')
-        banco = self.request.GET.get('banco', '')
-        status = self.request.GET.get('status', 'todas')
+        context['filtro_nome'] = self.request.GET.get('nome', '')
+        context['filtro_banco'] = self.request.GET.get('banco', '')
+        context['filtro_status'] = self.request.GET.get('status', 'ATIVA')
+        context['filtro_vigencia_inicio'] = self.request.GET.get('vigencia_inicio', '')
+        context['filtro_vigencia_fim'] = self.request.GET.get('vigencia_fim', '')
 
-        context['filtro_nome'] = nome
-        context['filtro_banco'] = banco
-        context['filtro_status'] = status
-
-        # Garante que todos os status estejam disponíveis no select
         context['status_labels'] = (
             Campanha.objects
             .values_list('status_manual', flat=True)
             .distinct()
             .order_by('status_manual')
         )
+
         return context
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['filtro_nome'] = self.request.GET.get('nome', '')
+        context['filtro_banco'] = self.request.GET.get('banco', '')
+        context['filtro_status'] = self.request.GET.get('status', 'ATIVA')
+        context['filtro_vigencia_inicio'] = self.request.GET.get('vigencia_inicio', '')
+        context['filtro_vigencia_fim'] = self.request.GET.get('vigencia_fim', '')
+
+        context['status_labels'] = (
+            Campanha.objects
+            .values_list('status_manual', flat=True)
+            .distinct()
+            .order_by('status_manual')
+        )
+
+        return context
 
 
 @method_decorator(login_required(login_url='login'), name='dispatch')
@@ -96,12 +131,12 @@ class CampanhaCreateView(View):
             campanha.parametrizado_wb = form_recebimento.cleaned_data.get('parametrizado_wb')
             campanha.tipo_valor_recebido = form_recebimento.cleaned_data.get('tipo_valor_recebido')
             campanha.tipo_valor_parametrizado_wb = form_recebimento.cleaned_data.get('tipo_valor_parametrizado_wb')
-
             campanha.vigencia_inicio = form_vigencia.cleaned_data.get('vigencia_inicio')
             campanha.vigencia_fim = form_vigencia.cleaned_data.get('vigencia_fim')
             campanha.periodicidade_repasses = form_vigencia.cleaned_data.get('periodicidade_repasses')
             campanha.previsao_pagamento = form_vigencia.cleaned_data.get('previsao_pagamento')
             campanha.parametro_avaliacao = form_vigencia.cleaned_data.get('parametro_avaliacao')
+            campanha.parametro_pagamento = form_vigencia.cleaned_data.get('parametro_pagamento')
             campanha.criterio_apuracao = form_vigencia.cleaned_data.get('criterio_apuracao')
             campanha.observacoes = form_vigencia.cleaned_data.get('observacoes')
             campanha.status_manual = form_vigencia.cleaned_data.get('status_manual')
@@ -174,6 +209,7 @@ class CampanhaUpdateView(View):
             campanha.periodicidade_repasses = form_vigencia.cleaned_data.get('periodicidade_repasses')
             campanha.previsao_pagamento = form_vigencia.cleaned_data.get('previsao_pagamento')
             campanha.parametro_avaliacao = form_vigencia.cleaned_data.get('parametro_avaliacao')
+            campanha.parametro_pagamento = form_vigencia.cleaned_data.get('parametro_pagamento')
             campanha.criterio_apuracao = form_vigencia.cleaned_data.get('criterio_apuracao')
             campanha.observacoes = form_vigencia.cleaned_data.get('observacoes')
             campanha.status_manual = form_vigencia.cleaned_data.get('status_manual')
@@ -248,24 +284,53 @@ class CampanhaControleView(ListView):
     context_object_name = 'campanhas'
 
     def get_queryset(self):
+        atualizar_campanhas_expiradas()
+
         queryset = super().get_queryset()
+
         nome = self.request.GET.get('nome')
         banco = self.request.GET.get('banco')
         status = self.request.GET.get('status')
+        data_inicio = self.request.GET.get('vigencia_inicio')
+        data_fim = self.request.GET.get('vigencia_fim')
 
         if nome:
             queryset = queryset.filter(campanha__icontains=nome)
+
         if banco:
             queryset = queryset.filter(banco__nome__icontains=banco)
-        if status and status != 'todas':
+
+        if status is None:
+            queryset = queryset.filter(status_manual__iexact='ATIVA')
+        elif status != 'todas':
             queryset = queryset.filter(status_manual__iexact=status)
 
-        return queryset
+        if data_inicio and data_fim:
+            queryset = queryset.filter(
+                vigencia_inicio__lte=data_fim,
+                vigencia_fim__gte=data_inicio
+            )
+        elif data_inicio:
+            queryset = queryset.filter(vigencia_fim__gte=data_inicio)
+        elif data_fim:
+            queryset = queryset.filter(vigencia_inicio__lte=data_fim)
+
+        return queryset.order_by('banco__nome', 'campanha')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
         context['filtro_nome'] = self.request.GET.get('nome', '')
         context['filtro_banco'] = self.request.GET.get('banco', '')
-        context['filtro_status'] = self.request.GET.get('status', 'todas')
-        context['status_opcoes'] = Campanha.objects.values_list('status_manual', flat=True).distinct()
+        context['filtro_status'] = self.request.GET.get('status', 'ATIVA')
+        context['filtro_vigencia_inicio'] = self.request.GET.get('vigencia_inicio', '')
+        context['filtro_vigencia_fim'] = self.request.GET.get('vigencia_fim', '')
+
+        context['status_opcoes'] = (
+            Campanha.objects
+            .values_list('status_manual', flat=True)
+            .distinct()
+            .order_by('status_manual')
+        )
+
         return context

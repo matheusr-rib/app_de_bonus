@@ -3,101 +3,137 @@
 
 {% block content %}
 
-<h1 class="text-3xl font-semibold text-purple-700 mb-6">Campanhas</h1>
+<h1 class="text-3xl font-bold text-purple-800 mb-10">Campanhas</h1>
 
-<!-- Filtros -->
-<form method="get" class="bg-white p-6 mb-8 border border-gray-200 shadow rounded-lg">
-  <div class="grid md:grid-cols-4 gap-4">
-    <input type="text" name="nome" placeholder="🔍 Nome da campanha"
-           value="{{ filtro_nome }}"
-           class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600" />
+<!-- FILTROS -->
+<form method="get" class="bg-white p-8 mb-12 rounded-2xl border-l-4 border-purple-600 shadow-sm">
+  <div class="grid md:grid-cols-4 gap-6">
+    <!-- Nome da campanha -->
+    <div class="flex flex-col gap-1">
+      <label class="text-sm text-gray-600 font-medium">Nome da campanha</label>
+      <input type="text" name="nome" placeholder="Ex: Campanha de Produção"
+             value="{{ filtro_nome }}"
+             class="border-b-2 border-gray-300 focus:border-purple-600 text-sm px-2 py-1 outline-none bg-transparent">
+    </div>
 
-    <input type="text" name="banco" placeholder="🏦 Nome do banco"
-           value="{{ filtro_banco }}"
-           class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600" />
+    <!-- Banco -->
+    <div class="flex flex-col gap-1">
+      <label class="text-sm text-gray-600 font-medium">Banco</label>
+      <input type="text" name="banco" placeholder="Ex: Amigoz"
+             value="{{ filtro_banco }}"
+             class="border-b-2 border-gray-300 focus:border-purple-600 text-sm px-2 py-1 outline-none bg-transparent">
+    </div>
 
-    <select name="status"
-            class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600">
-      <option value="todas">Todos os status</option>
-      {% for status in status_labels %}
-        <option value="{{ status }}" {% if filtro_status == status %}selected{% endif %}>{{ status }}</option>
-      {% endfor %}
-    </select>
+    <!-- Status -->
+    <div class="flex flex-col gap-1">
+      <label class="text-sm text-gray-600 font-medium">Status</label>
+      <select name="status"
+              class="border-b-2 border-gray-300 focus:border-purple-600 text-sm px-2 py-1 outline-none bg-transparent">
+        <option value="todas" {% if filtro_status == 'todas' %}selected{% endif %}>Todas</option>
+        {% for status in status_labels %}
+          <option value="{{ status }}" {% if filtro_status == status %}selected{% endif %}>{{ status }}</option>
+        {% endfor %}
+      </select>
+    </div>
 
-    <div class="text-right md:col-span-1 flex items-end">
+    <!-- Vigência -->
+    <div class="flex flex-col gap-1">
+      <label class="text-sm text-gray-600 font-medium">Vigência entre:</label>
+      <input type="date" name="vigencia_inicio" value="{{ filtro_vigencia_inicio }}"
+             class="border-b-2 border-gray-300 focus:border-purple-600 text-sm px-2 py-1 outline-none bg-transparent">
+      <input type="date" name="vigencia_fim" value="{{ filtro_vigencia_fim }}"
+             class="w-full border-b-2 border-gray-300 focus:border-purple-600 text-sm px-2 py-1 outline-none bg-transparent">
+    </div>
+
+    <!-- Botão -->
+    <div class="flex items-end">
       <button type="submit"
-              class="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700 transition w-full">
+              class="w-full backdrop-blur-sm bg-orange-500/90 hover:bg-orange-600/90 text-white font-semibold px-6 py-2 rounded-xl shadow-sm transition">
         Filtrar
       </button>
     </div>
   </div>
 </form>
 
-<!-- Agrupamento por status -->
-{% for status_label in status_labels %}
-  <h2 class="text-xl font-semibold text-purple-600 mt-6 mb-4">{{ status_label|title }}</h2>
+<!-- AGRUPAMENTO POR BANCO -->
+{% regroup campanhas by banco as campanhas_por_banco %}
+
+{% for grupo in campanhas_por_banco %}
+  <h2 class="text-xl font-semibold text-purple-700 mt-10 mb-4">
+    Banco: {{ grupo.grouper }}
+  </h2>
 
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for campanha in campanhas %}
-      {% if campanha.status_manual == status_label %}
-        <div class="card bg-white shadow rounded-lg p-4 relative transition hover:shadow-xl">
+    {% for campanha in grupo.list %}
+      <div class="card bg-white border border-gray-100 shadow-sm rounded-xl p-5 transition hover:shadow-lg relative">
 
-          <!-- Conteúdo fixo -->
-          <h3 class="text-lg font-bold text-purple-700 mb-2">{{ campanha.campanha }}</h3>
-          <p><strong>Banco:</strong> {{ campanha.banco }}</p>
-          <p><strong>Status:</strong> {{ campanha.status_manual }}</p>
-          <p><strong>Recebido:</strong>
-            {% if campanha.faixas.exists %}
-              Possui meta
-            {% else %}
-              {{ campanha.recebido|default:"-" }} {{ campanha.tipo_valor_recebido }}
-            {% endif %}
-          </p>
-          <p><strong>Parametrizado:</strong>
-            {{ campanha.parametrizado_wb|default:"-" }} {{ campanha.tipo_valor_parametrizado_wb|default:"" }}
-          </p>
+        <!-- Título da Campanha -->
+        <h3 class="text-lg font-bold text-purple-800 mb-2">{{ campanha.campanha }}</h3>
 
-          <!-- "Detalhes" fixo -->
-          <div class="mt-4 text-center text-purple-500 font-semibold text-sm">Detalhes</div>
+        <!-- Informações principais -->
+        <p class="text-sm text-gray-700"><strong>Status:</strong> {{ campanha.status_manual }}</p>
 
-          <!-- Detalhes no hover -->
-          <div class="detalhes mt-2 bg-purple-50 p-2 rounded-md">
-            <p><strong>Nomenclatura WB:</strong> {{ campanha.nomenclatura_wb }}</p>
+        <!-- Vigência -->
+        <p class="text-sm text-gray-700">
+          <strong>Vigência:</strong> {{ campanha.vigencia_inicio|date:"d/m/Y" }} —
+          {% if campanha.vigencia_fim %}
+            {{ campanha.vigencia_fim|date:"d/m/Y" }}
+          {% else %}
+            <span class="italic text-gray-400">sem fim</span>
+          {% endif %}
+        </p>
 
-            {% if campanha.faixas.exists %}
-              <p><strong>Faixas:</strong></p>
-              <ul class="list-disc pl-5 mb-2 text-sm">
-                {% for faixa in campanha.faixas.all %}
-                  <li>
-                    {% if faixa.faixa_final %}
-                      R$ {{ faixa.faixa_inicial|floatformat:2 }} a R$ {{ faixa.faixa_final|floatformat:2 }} →
-                      Comissão: {{ faixa.valor_recebido|floatformat:2 }} {{ faixa.tipo_valor }}
-                    {% else %}
-                      Acima de R$ {{ faixa.faixa_inicial|floatformat:2 }} →
-                      Comissão: {{ faixa.valor_recebido|floatformat:2 }} {{ faixa.tipo_valor }}
-                    {% endif %}
-                    {% if faixa.faixa_garantida %}<em>(Faixa Garantida)</em>{% endif %}
-                  </li>
-                {% endfor %}
-              </ul>
-            {% endif %}
+        <!-- Recebido e parametrizado -->
+        <p class="text-sm text-gray-700"><strong>Recebido:</strong>
+          {% if campanha.faixas.exists %}
+            Possui meta
+          {% else %}
+            {{ campanha.recebido|default:"-" }} {{ campanha.tipo_valor_recebido }}
+          {% endif %}
+        </p>
+        <p class="text-sm text-gray-700"><strong>Parametrizado:</strong>
+          {{ campanha.parametrizado_wb|default:"-" }} {{ campanha.tipo_valor_parametrizado_wb|default:"" }}
+        </p>
 
-            <p><strong>Vigência:</strong> {{ campanha.vigencia_inicio|date:"d/m/Y" }} até {{ campanha.vigencia_fim|date:"d/m/Y" }}</p>
-            <p><strong>Periodicidade:</strong> {{ campanha.periodicidade_repasses }}</p>
-            <p><strong>Previsão Pagamento:</strong> {{ campanha.previsao_pagamento }}</p>
-            <p><strong>Parâmetro Avaliação:</strong> {{ campanha.parametro_avaliacao }}</p>
-            <p><strong>Critério Apuração:</strong> {{ campanha.criterio_apuracao }}</p>
-            {% if campanha.observacoes %}
-              <p><strong>Observações:</strong> {{ campanha.observacoes }}</p>
-            {% endif %}
-          </div>
+        <div class="mt-4 text-center text-sm text-purple-600 font-semibold">Detalhes</div>
+
+        <!-- DETALHES OCULTOS (hover) -->
+        <div class="detalhes mt-2 bg-purple-50 p-3 rounded-md text-sm text-gray-700">
+          <p><strong>Nomenclatura WB:</strong> {{ campanha.nomenclatura_wb }}</p>
+
+          {% if campanha.faixas.exists %}
+            <p class="mt-2"><strong>Faixas:</strong></p>
+            <ul class="list-disc pl-5 mb-2">
+              {% for faixa in campanha.faixas.all %}
+                <li>
+                  {% if faixa.faixa_final %}
+                    R$ {{ faixa.faixa_inicial|floatformat:2 }} a R$ {{ faixa.faixa_final|floatformat:2 }} →
+                    Comissão: {{ faixa.valor_recebido|floatformat:2 }} {{ faixa.tipo_valor }}
+                  {% else %}
+                    Acima de R$ {{ faixa.faixa_inicial|floatformat:2 }} →
+                    Comissão: {{ faixa.valor_recebido|floatformat:2 }} {{ faixa.tipo_valor }}
+                  {% endif %}
+                  {% if faixa.faixa_garantida %}<em class="text-purple-500">(Faixa Garantida)</em>{% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          <p><strong>Periodicidade:</strong> {{ campanha.periodicidade_repasses }}</p>
+          <p><strong>Previsão de Pagamento:</strong> {{ campanha.previsao_pagamento }}</p>
+          <p><strong>Parâmetro de Avaliação:</strong> {{ campanha.parametro_avaliacao }}</p>
+          <p><strong>Parâmetro de Pagamento:</strong> {{ campanha.parametro_pagamento }}</p>
+          <p><strong>Critério Apuração:</strong> {{ campanha.criterio_apuracao }}</p>
+          {% if campanha.observacoes %}
+            <p><strong>Observações:</strong> {{ campanha.observacoes }}</p>
+          {% endif %}
         </div>
-      {% endif %}
+      </div>
     {% endfor %}
   </div>
 {% endfor %}
 
-<!-- CSS local -->
+<!-- EFEITO DE HOVER -->
 <style>
   .card .detalhes {
     max-height: 0;

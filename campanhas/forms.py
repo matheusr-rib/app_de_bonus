@@ -58,7 +58,7 @@ class VigenciaERegras(ModelForm):
         fields = [
             'vigencia_inicio', 'vigencia_fim','periodicidade_repasses',
             'previsao_pagamento','parametro_avaliacao','criterio_apuracao',
-            'observacoes','status_manual'
+            'observacoes','status_manual','parametro_pagamento',
         ]
         widgets = {
             'vigencia_inicio': forms.DateInput(

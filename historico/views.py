@@ -60,7 +60,8 @@ def historico_listagem(request):
     }
     return render(request, 'historico_listagem.html', context)
 
-
+@login_required(login_url='login')
+@tipo_usuario_requerido('master')
 def relatorios_campanha(request):
     context = {
         'bancos': Campanha.objects.values_list('banco__id', 'banco__nome').distinct(),
@@ -73,7 +74,8 @@ def relatorios_campanha(request):
     }
     return render(request, 'relatorios_campanha.html', context)
 
-
+@login_required(login_url='login')
+@tipo_usuario_requerido('master')
 def exportar_relatorio_excel(request):
     tipo = request.GET.get("tipo", "alteracoes")
     wb = Workbook()
@@ -179,7 +181,7 @@ def exportar_relatorio_excel(request):
                 h.campanha_nome,
                 status,
                 h.acao,
-                h.usuario.username if h.usuario else "—",
+                h.usuario.username if h.usuario else "Sistema",
                 vig_inicio,
                 vig_fim,
                 data_acao,

@@ -4,30 +4,40 @@
 {% block content %}
 <h2 class="text-3xl font-bold text-purple-800 mb-8">Controle de Campanhas</h2>
 <form method="get" class="bg-white p-6 mb-8 border border-gray-200 shadow rounded-lg">
-  <div class="grid md:grid-cols-4 gap-4">
-    <!-- Filtro nome da campanha -->
+  <div class="grid md:grid-cols-5 gap-4">
+    <!-- Nome da campanha -->
     <input type="text" name="nome" placeholder="🔍 Nome da campanha"
            value="{{ filtro_nome }}"
            class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600" />
 
-    <!-- Filtro banco -->
+    <!-- Banco -->
     <input type="text" name="banco" placeholder="🏦 Nome do banco"
            value="{{ filtro_banco }}"
            class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600" />
 
-    <!-- Filtro status -->
+    <!-- Status -->
     <select name="status"
             class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600">
-      <option value="todas">Todos os status</option>
+      <option value="todas" {% if filtro_status == 'todas' %}selected{% endif %}>Todas</option>
       {% for status in status_opcoes %}
         <option value="{{ status }}" {% if filtro_status == status %}selected{% endif %}>{{ status }}</option>
       {% endfor %}
     </select>
 
-    <!-- Botão filtrar -->
-    <div class="text-right md:col-span-1 flex items-end">
+    <!-- Vigência Início -->
+    <input type="date" name="vigencia_inicio" value="{{ filtro_vigencia_inicio }}"
+           class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600"
+           placeholder="Data início" />
+
+    <!-- Vigência Fim -->
+    <input type="date" name="vigencia_fim" value="{{ filtro_vigencia_fim }}"
+           class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600"
+           placeholder="Data fim" />
+
+    <!-- Botão -->
+    <div class="flex items-end">
       <button type="submit"
-              class="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700 transition w-full">
+              class="w-full backdrop-blur-sm bg-orange-500/90 hover:bg-orange-600/90 text-white font-semibold px-6 py-2 rounded-xl shadow-sm transition">
         Filtrar
       </button>
     </div>

@@ -152,7 +152,10 @@ class CampanhaCreateView(View):
                 if faixa_formset.is_valid():
                     faixa_formset.save()
                 else:
-                    # Se as faixas estiverem inválidas, volta ao form com erros
+                    print('❌ ERROS NO FORMSET:')
+                    for form in faixa_formset:
+                        print(form.errors)
+                    print(faixa_formset.non_form_errors())
                     return render(request, self.template_name, {
                         'form_campanha': form_campanha,
                         'form_recebimento': form_recebimento,

@@ -2,13 +2,28 @@ from django.forms import ModelForm
 from django import forms
 from .models import Campanha, Banco, FaixaMeta
 from django.forms import inlineformset_factory
+from django.utils.translation import gettext_lazy as _
+
+    
 
 class CampanhaBaseForm(forms.ModelForm):
-    banco_nome = forms.CharField(label="Banco", max_length=100)
+    banco_nome = forms.CharField(
+        label="Banco",
+        max_length=100,
+        error_messages={
+            'required': 'Informe o nome do banco.',
+        }
+    )
 
     class Meta:
         model = Campanha
-        fields = ['campanha', 'nomenclatura_wb']  
+        fields = ['campanha', 'nomenclatura_wb']
+        error_messages = {
+            'campanha': {
+                'required': 'Informe o nome da campanha.',
+            },
+        } 
+    
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -28,27 +43,42 @@ class CampanhaBaseForm(forms.ModelForm):
 class Faixas_De_Meta(forms.ModelForm):
     class Meta:
         model = FaixaMeta
-        fields = [
-            'faixa_inicial',
-            'faixa_final',
-            'valor_recebido',
-            'tipo_valor',
-            'faixa_garantida'
-        ]
+        fields = ['faixa_inicial', 'faixa_final', 'valor_recebido', 'tipo_valor', 'faixa_garantida']
         widgets = {
-            'faixa_inicial': forms.NumberInput(attrs={'step': '0.01', 'placeholder': 'Valor mínimo'}),
-            'faixa_final': forms.NumberInput(attrs={'step': '0.01', 'placeholder': 'Valor máximo'}),
-            'valor_recebido': forms.NumberInput(attrs={'step': '0.01', 'placeholder': 'Valor recebido'}),
+            'faixa_inicial': forms.TextInput(attrs={'placeholder': '0,00'}),
+            'faixa_final': forms.TextInput(attrs={'placeholder': 'opcional'}),
+            'valor_recebido': forms.TextInput(attrs={'placeholder': '0,00'}),
+        }
+        error_messages = {
+            'faixa_inicial': {
+                'required': 'Informe a faixa inicial.',
+                'invalid': 'Digite um número válido para faixa inicial.',
+            },
+            'valor_recebido': {
+                'required': 'Informe o valor recebido.',
+                'invalid': 'Digite um número válido para valor recebido.',
+            },
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in ['faixa_inicial', 'faixa_final', 'valor_recebido']:
+            self.fields[field].localize = True
 
-class Recebimento_E_Repasse(ModelForm):
+
+class Recebimento_E_Repasse(forms.ModelForm):
     class Meta:
         model = Campanha
         fields = ['recebido', 'parametrizado_wb', 'tipo_valor_recebido','tipo_valor_parametrizado_wb']
         widgets = {
             'recebido': forms.NumberInput(attrs={'step': '0.01', 'placeholder': 'Valor recebido'}),
             'parametrizado_wb': forms.NumberInput(attrs={'step': '0.01', 'placeholder': 'Valor parametrizado'}),
+        }
+        error_messages = {
+            'parametrizado_wb': {
+                'required': 'Informe o valor parametrizado.',
+                'invalid': 'Digite um número válido para o parametrizado.',
+            },
         }
 
 
@@ -76,12 +106,8 @@ class VigenciaERegras(ModelForm):
 FaixaMetaFormSet = inlineformset_factory(
     Campanha,
     FaixaMeta,
+    form=Faixas_De_Meta,
     fields=['faixa_inicial', 'faixa_final', 'tipo_valor', 'valor_recebido', 'faixa_garantida'],
     extra=1,
-    can_delete=True,  
-    widgets={
-        'faixa_inicial': forms.NumberInput(attrs={'placeholder': '0.00', 'step': '0.01'}),
-        'faixa_final': forms.NumberInput(attrs={'placeholder': 'opcional', 'step': '0.01'}),
-        'valor_recebido': forms.NumberInput(attrs={'placeholder': 'Ex: 0.50', 'step': '0.01'}),
-    }
+    can_delete=True
 )

@@ -36,14 +36,21 @@
   <h2 class="text-3xl font-bold text-purple-800 mb-10">Cadastrar Campanha</h2>
 
   <form method="post" class="space-y-10">
-    {% csrf_token %}
+  {% csrf_token %}
 
-    {% if form_campanha.non_field_errors %}
-      <p class="text-red-500 text-sm">{{ form_campanha.non_field_errors.0 }}</p>
-    {% endif %}
-    {% if faixa_formset.non_form_errors %}
-      <p class="text-red-500 text-sm">{{ faixa_formset.non_form_errors.0 }}</p>
-    {% endif %}
+  {% if form_campanha.errors or form_recebimento.errors or form_vigencia.errors or faixa_formset.errors %}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+      <strong class="font-bold">⚠️ Atenção:</strong>
+      <span class="block sm:inline">Preencha os campos obrigatórios abaixo corretamente.</span>
+    </div>
+  {% endif %}
+
+  {% if form_campanha.non_field_errors %}
+    <p class="text-red-500 text-sm">{{ form_campanha.non_field_errors.0 }}</p>
+  {% endif %}
+  {% if faixa_formset.non_form_errors %}
+    <p class="text-red-500 text-sm">{{ faixa_formset.non_form_errors.0 }}</p>
+  {% endif %}
 
     <section class="bg-white p-6 rounded-lg shadow border border-gray-200">
       <h3 class="text-xl font-semibold text-purple-700 mb-4"><i class="fa fa-file-alt mr-2 text-gray-500"></i> Informações Básicas</h3>

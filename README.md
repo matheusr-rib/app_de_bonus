@@ -8,7 +8,7 @@ Este projeto é um sistema web desenvolvido com Django para **gestão de campanh
 ## 🛠 Requisitos
 - Python 3.10+
 - pip (gerenciador de pacotes Python)
-- Virtualenv ou `venv`
+- instalar requirements.txt
 - PostgreSQL 
 
 ---
@@ -31,10 +31,7 @@ $ pip install -r requirements.txt
 # 4. Rode as migrações
 $ python manage.py migrate
 
-# 5. Crie um superusuário para acessar o admin
-$ python manage.py createsuperuser
-
-# 6. Rode o servidor local
+# 5. Rode o servidor local
 $ python manage.py runserver
 
 # Acesse em: http://127.0.0.1:8000
@@ -55,27 +52,6 @@ app_de_bonus/
 ├── manage.py
 ├── requirements.txt
 └── README.md
-```
-
----
-
-## 🔐 Acesso e Permissões
-- Acesse a área administrativa via `/admin`
-- Crie grupos de usuários conforme necessidade:
-  - **Administrador**: acesso completo
-  - **Gerente**: acesso a edição e criação
-  - **Visualizador**: acesso somente leitura
-
----
-
-## 📃 Principais Funcionalidades
-- Cadastro de campanhas vinculadas a bancos
-- Formulários condicionais (ex: "possui meta")
-- Múltiplos formulários (faixas, repasses, vigência)
-- Registro automático de histórico (criação, edição, exclusão)
-- Interface responsiva com layout visual limpo
-
----
 
 ## 🛠 Deploy em Produção (recomendações)
 - Configure `.env` com:
@@ -106,13 +82,3 @@ $ python manage.py collectstatic
 | historico  | Registro de ações e alterações |
 | usuarios   | Login, permissões e acesso controlado |
 
----
-
-## 📈 Contato e Suporte
-Caso o time de TI precise de apoio para rodar ou publicar o sistema, entrar em contato com o desenvolvedor original:
-
-> Guilherme – [Seu Email ou GitHub]
-
----
-
-Tudo pronto! Basta seguir os passos acima para executar ou adaptar o deploy.

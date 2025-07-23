@@ -4,7 +4,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from usuarios.decorators import tipo_usuario_requerido
-from django.db.models import Q
+import os
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from django.http import HttpResponse
+from django.http import FileResponse
+from django.conf import settings
 from historico.models import HistoricoAcao
 from .services import atualizar_campanhas_expiradas
 from .models import Campanha
@@ -94,6 +99,49 @@ class CampanhaListView(ListView):
         return context
 
 
+class CampanhaAnexoView(View):
+    def get(self, request, pk):
+        campanha = get_object_or_404(Campanha, pk=pk)
+
+        if not campanha.anexo:
+            return HttpResponse("Sem anexo", status=404)
+
+        ext = campanha.anexo.name.lower().split('.')[-1]
+        file_path = os.path.join(settings.MEDIA_ROOT, campanha.anexo.name)
+
+        if ext == 'pdf':
+            return FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+
+        elif ext in ['jpg', 'jpeg', 'png']:
+            response = HttpResponse(content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="campanha_{pk}_imagem.pdf"'
+            p = canvas.Canvas(response, pagesize=A4)
+            p.setFont("Helvetica", 12)
+            p.drawString(100, 800, f"Anexo da campanha: {campanha.campanha}")
+
+            if os.path.exists(file_path):
+                p.drawImage(file_path, 100, 400, width=400, height=300, preserveAspectRatio=True)
+            else:
+                p.drawString(100, 780, "Imagem não encontrada.")
+
+            p.showPage()
+            p.save()
+            return response
+
+        elif ext == 'xlsx':
+            if os.path.exists(file_path):
+                return FileResponse(
+                    open(file_path, 'rb'),
+                    as_attachment=True,
+                    filename=os.path.basename(file_path),
+                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                )
+            else:
+                return HttpResponse("Arquivo Excel não encontrado", status=404)
+
+        return HttpResponse("Tipo de anexo não suportado.", status=400)
+    
+
 @method_decorator(login_required(login_url='login'), name='dispatch')
 @method_decorator(tipo_usuario_requerido('master', 'editor'), name='dispatch')
 class CampanhaCreateView(View):
@@ -117,7 +165,7 @@ class CampanhaCreateView(View):
         })
 
     def post(self, request):
-        form_campanha = CampanhaBaseForm(request.POST)
+        form_campanha = CampanhaBaseForm(request.POST, request.FILES)
         form_recebimento = Recebimento_E_Repasse(request.POST)
         form_vigencia = VigenciaERegras(request.POST)
         possui_meta = request.POST.get('possui_meta') == 'on'
@@ -192,7 +240,7 @@ class CampanhaUpdateView(View):
     def post(self, request, pk):
         campanha = get_object_or_404(Campanha, pk=pk)
 
-        form_campanha = CampanhaBaseForm(request.POST, instance=campanha)
+        form_campanha = CampanhaBaseForm(request.POST, request.FILES)
         form_recebimento = Recebimento_E_Repasse(request.POST, instance=campanha)
         form_vigencia = VigenciaERegras(request.POST, instance=campanha)
         possui_meta = 'possui_meta' in request.POST or campanha.possui_meta

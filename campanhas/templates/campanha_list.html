@@ -8,7 +8,6 @@
 <!-- FILTROS -->
 <form method="get" class="bg-white p-8 mb-12 rounded-2xl border-l-4 border-purple-600 shadow-sm">
   <div class="grid md:grid-cols-4 gap-6">
-    <!-- Nome da campanha -->
     <div class="flex flex-col gap-1">
       <label class="text-sm text-gray-600 font-medium">Nome da campanha</label>
       <input type="text" name="nome" placeholder="Ex: Campanha de Produção"
@@ -16,7 +15,6 @@
              class="border-b-2 border-gray-300 focus:border-purple-600 text-sm px-2 py-1 outline-none bg-transparent">
     </div>
 
-    <!-- Banco -->
     <div class="flex flex-col gap-1">
       <label class="text-sm text-gray-600 font-medium">Banco</label>
       <input type="text" name="banco" placeholder="Ex: Amigoz"
@@ -24,7 +22,6 @@
              class="border-b-2 border-gray-300 focus:border-purple-600 text-sm px-2 py-1 outline-none bg-transparent">
     </div>
 
-    <!-- Status -->
     <div class="flex flex-col gap-1">
       <label class="text-sm text-gray-600 font-medium">Status</label>
       <select name="status"
@@ -36,7 +33,6 @@
       </select>
     </div>
 
-    <!-- Vigência -->
     <div class="flex flex-col gap-1">
       <label class="text-sm text-gray-600 font-medium">Vigência entre:</label>
       <input type="date" name="vigencia_inicio" value="{{ filtro_vigencia_inicio }}"
@@ -45,7 +41,6 @@
              class="w-full border-b-2 border-gray-300 focus:border-purple-600 text-sm px-2 py-1 outline-none bg-transparent">
     </div>
 
-    <!-- Botão -->
     <div class="flex items-end">
       <button type="submit"
               class="w-full backdrop-blur-sm bg-orange-500/90 hover:bg-orange-600/90 text-white font-semibold px-6 py-2 rounded-xl shadow-sm transition">
@@ -73,7 +68,6 @@
         <!-- Informações principais -->
         <p class="text-sm text-gray-700"><strong>Status:</strong> {{ campanha.status_manual }}</p>
 
-        <!-- Vigência -->
         <p class="text-sm text-gray-700">
           <strong>Vigência:</strong> {{ campanha.vigencia_inicio|date:"d/m/Y" }} —
           {% if campanha.vigencia_fim %}
@@ -83,7 +77,6 @@
           {% endif %}
         </p>
 
-        <!-- Recebido e parametrizado -->
         <p class="text-sm text-gray-700"><strong>Recebido:</strong>
           {% if campanha.faixas.exists %}
             Possui meta
@@ -91,6 +84,7 @@
             {{ campanha.recebido|default:"-" }} {{ campanha.tipo_valor_recebido }}
           {% endif %}
         </p>
+
         <p class="text-sm text-gray-700"><strong>Parametrizado:</strong>
           {{ campanha.parametrizado_wb|default:"-" }} {{ campanha.tipo_valor_parametrizado_wb|default:"" }}
         </p>
@@ -113,7 +107,9 @@
                     Acima de R$ {{ faixa.faixa_inicial|floatformat:2 }} →
                     Comissão: {{ faixa.valor_recebido|floatformat:2 }} {{ faixa.tipo_valor }}
                   {% endif %}
-                  {% if faixa.faixa_garantida %}<em class="text-purple-500">(Faixa Garantida)</em>{% endif %}
+                  {% if faixa.faixa_garantida %}
+                    <em class="text-purple-500">(Faixa Garantida)</em>
+                  {% endif %}
                 </li>
               {% endfor %}
             </ul>
@@ -124,8 +120,18 @@
           <p><strong>Parâmetro de Avaliação:</strong> {{ campanha.parametro_avaliacao }}</p>
           <p><strong>Parâmetro de Pagamento:</strong> {{ campanha.parametro_pagamento }}</p>
           <p><strong>Critério Apuração:</strong> {{ campanha.criterio_apuracao }}</p>
+
           {% if campanha.observacoes %}
             <p><strong>Observações:</strong> {{ campanha.observacoes }}</p>
+          {% endif %}
+
+          {% if campanha.anexo %}
+            <p class="mt-3">
+              <a href="{% url 'campanha_anexo_pdf' campanha.pk %}" target="_blank"
+                class="inline-flex items-center text-purple-600 hover:text-purple-800 underline font-medium">
+                📎 Ver Anexo
+              </a>
+            </p>
           {% endif %}
         </div>
       </div>

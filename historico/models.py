@@ -2,26 +2,33 @@ from django.db import models
 from django.conf import settings
 from campanhas.models import Campanha
 from historico.middleware import get_current_request
+from django.conf import settings
+
 
 
 class HistoricoAcao(models.Model):
-    ACAO_CHOICES = (
-        ('criado', 'Criado'),
-        ('editado', 'Editado'),
-        ('deletado', 'Deletado'),
+    campanha = models.ForeignKey(
+        Campanha,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='historicos'
     )
-
-    campanha = models.ForeignKey('campanhas.Campanha', on_delete=models.SET_NULL, null=True, blank=True)
-    campanha_nome = models.CharField(max_length=255, blank=True)  # salva o nome da campanha
-    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
-    acao = models.CharField(max_length=10, choices=ACAO_CHOICES)
+    campanha_nome = models.CharField(max_length=255)
+    acao = models.CharField(max_length=50)
+    usuario = models.ForeignKey(
+    settings.AUTH_USER_MODEL,
+    null=True,
+    blank=True,
+    on_delete=models.SET_NULL
+    )
+    vigencia_inicio = models.DateField(null=True, blank=True)
+    vigencia_fim = models.DateField(null=True, blank=True)
     data_hora = models.DateTimeField(auto_now_add=True)
-    vigencia_inicio = models.DateField(blank=True, null=True)
-    vigencia_fim = models.DateField(blank=True, null=True)
     detalhe = models.TextField(blank=True)
 
     def __str__(self):
-        return f"{self.campanha_nome} - {self.acao} por {self.usuario} em {self.data_hora}"
+        return f"{self.acao} - {self.campanha_nome}"
 
 
 

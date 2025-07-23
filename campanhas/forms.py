@@ -17,13 +17,20 @@ class CampanhaBaseForm(forms.ModelForm):
 
     class Meta:
         model = Campanha
-        fields = ['campanha', 'nomenclatura_wb']
+        fields = ['campanha', 'nomenclatura_wb','anexo']
         error_messages = {
             'campanha': {
                 'required': 'Informe o nome da campanha.',
             },
         } 
     
+    def clean_anexo(self):
+        file = self.cleaned_data.get('anexo')
+        if file:
+            ext = file.name.lower().split('.')[-1]
+            if ext not in ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'xlsx']:
+                raise forms.ValidationError("O anexo deve ser uma imagem, PDF ou planilha Excel.")
+        return file
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -31,13 +38,14 @@ class CampanhaBaseForm(forms.ModelForm):
         
         if self.instance and self.instance.pk:
             self.fields['banco_nome'].initial = self.instance.banco.nome
-        self.order_fields(['banco_nome', 'campanha', 'nomenclatura_wb'])
+        self.order_fields(['banco_nome', 'campanha', 'nomenclatura_wb','anexo'])
 
     def save(self, commit=True):
         nome_banco = self.cleaned_data.pop('banco_nome')
         banco, created = Banco.objects.get_or_create(nome=nome_banco)
         self.instance.banco = banco
         return super().save(commit=commit)
+    
 
 
 class Faixas_De_Meta(forms.ModelForm):

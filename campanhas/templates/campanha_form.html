@@ -35,7 +35,7 @@
 <div class="max-w-6xl mx-auto">
   <h2 class="text-3xl font-bold text-purple-800 mb-10">Cadastrar Campanha</h2>
 
-  <form method="post" class="space-y-10">
+  <form method="post" enctype="multipart/form-data" class="space-y-10">
   {% csrf_token %}
 
   {% if form_campanha.errors or form_recebimento.errors or form_vigencia.errors or faixa_formset.errors %}
@@ -234,7 +234,20 @@
         </div>
       </div>
     </section>
-
+    <section class="bg-white p-6 rounded-lg shadow border border-gray-200">
+      <h3 class="text-xl font-semibold text-purple-700 mb-4">
+        <i class="fa fa-paperclip mr-2 text-gray-500"></i> Anexo da Campanha
+      </h3>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700">Selecionar anexo:</label>
+          {{ form_campanha.anexo|add_class:"w-full p-2 border border-gray-300 rounded bg-white" }}
+          {% if form_campanha.anexo.errors %}
+            <p class="text-red-500 text-sm mt-1">{{ form_campanha.anexo.errors.0 }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </section>
     <div class="text-right">
       <button type="submit" class="mt-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium shadow transition">
         Salvar Campanha

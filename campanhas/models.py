@@ -8,7 +8,7 @@ class Banco(models.Model):
     def __str__(self):
         return self.nome
 
-
+                                
 class Campanha(models.Model):
     TIPO_VALOR_CHOICES = [
         ('R$', 'R$'),
@@ -20,7 +20,7 @@ class Campanha(models.Model):
         ('INATIVA', 'Inativa'),
         ('EM ANALISE', 'Em analise'),
     ]
-
+     
     banco = models.ForeignKey(Banco, on_delete=models.PROTECT, related_name='campanhas')
     campanha = models.CharField(max_length=200, default=' ')
     nomenclatura_wb = models.CharField(max_length=200, default=' ')
@@ -29,7 +29,7 @@ class Campanha(models.Model):
     tipo_valor_recebido = models.CharField(max_length=20, choices=TIPO_VALOR_CHOICES, default='%', blank=True, null=True)
     tipo_valor_parametrizado_wb = models.CharField(max_length=20, choices=TIPO_VALOR_CHOICES, default=' ', blank=True, null=True)
     inativada_automaticamente = models.BooleanField(default=False)
-
+    anexo = models.FileField(upload_to='campanha_anexos/', blank=True, null=True)
 
     vigencia_inicio = models.DateField(default=timezone.now)
     vigencia_fim = models.DateField(blank=True, null=True)

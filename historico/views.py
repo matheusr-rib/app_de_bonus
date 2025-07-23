@@ -5,12 +5,14 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from campanhas.models import Banco
 from usuarios.decorators import tipo_usuario_requerido
-from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from campanhas.models import Campanha
-from datetime import datetime
+from datetime import datetime,date
+from io import BytesIO
+import pandas as pd
+from django.db import models
 
 
 @login_required(login_url='login')
@@ -74,6 +76,8 @@ def relatorios_campanha(request):
     }
     return render(request, 'relatorios_campanha.html', context)
 
+
+
 @login_required(login_url='login')
 @tipo_usuario_requerido('master')
 def exportar_relatorio_excel(request):
@@ -83,10 +87,13 @@ def exportar_relatorio_excel(request):
 
     if tipo == "vigencias":
         ws.title = "Relatório de Vigências"
-        headers = ["Banco", "Campanha", "Status", "Vigência Início", "Vigência Fim", "Data de Exclusão"]
+        headers = [
+            "Banco", "Campanha", "Status", "Vigência Início", "Vigência Fim",
+            "Faixa Inicial", "Faixa Final", "Tipo Valor", "Valor Recebido", "Faixa Garantida"
+        ]
         ws.append(headers)
 
-        campanhas = Campanha.objects.select_related("banco")
+        campanhas = Campanha.objects.select_related("banco").prefetch_related("faixas")
 
         # Filtros
         nome = request.GET.get("nome")
@@ -102,7 +109,6 @@ def exportar_relatorio_excel(request):
         if status:
             campanhas = campanhas.filter(status_manual=status)
 
-        # Filtro de vigência corrigido
         if data_inicio and data_fim:
             campanhas = campanhas.filter(
                 vigencia_inicio__lte=data_fim
@@ -116,84 +122,44 @@ def exportar_relatorio_excel(request):
         elif data_fim:
             campanhas = campanhas.filter(vigencia_inicio__lte=data_fim)
 
-        # Data de exclusão (baseado no histórico)
-        historico_deletadas = HistoricoAcao.objects.filter(acao='deletado')
-        historico_exclusoes = {h.campanha_nome: h.data_hora.date() for h in historico_deletadas}
-
         for c in campanhas:
             vigencia_inicio = c.vigencia_inicio.strftime("%d/%m/%Y") if c.vigencia_inicio else ""
             vigencia_fim = c.vigencia_fim.strftime("%d/%m/%Y") if c.vigencia_fim else "—"
-            data_exclusao = historico_exclusoes.get(c.campanha)
-            data_exclusao_fmt = data_exclusao.strftime("%d/%m/%Y") if data_exclusao else ""
 
-            ws.append([
-                c.banco.nome,
-                c.campanha,
-                c.status_manual,
-                vigencia_inicio,
-                vigencia_fim,
-                data_exclusao_fmt
-            ])
+            faixas = c.faixas.all()
+            if faixas.exists():
+                for faixa in faixas:
+                    ws.append([
+                        c.banco.nome,
+                        c.campanha,
+                        c.status_manual,
+                        vigencia_inicio,
+                        vigencia_fim,
+                        float(faixa.faixa_inicial),
+                        float(faixa.faixa_final) if faixa.faixa_final else "Acima",
+                        faixa.tipo_valor,
+                        float(faixa.valor_recebido),
+                        "Sim" if faixa.faixa_garantida else "Não"
+                    ])
+            else:
+                ws.append([
+                    c.banco.nome,
+                    c.campanha,
+                    c.status_manual,
+                    vigencia_inicio,
+                    vigencia_fim,
+                    "", "", "", "", ""
+                ])
 
-    else:  # tipo == "alteracoes"
-        ws.title = "Relatório de Alterações"
-        headers = [
-            "ID", "Banco", "Campanha", "Status", "Ação", "Usuário",
-            "Vigência Início", "Vigência Fim", "Data da Ação", "Detalhe"
-        ]
-        ws.append(headers)
-
-        historicos = HistoricoAcao.objects.select_related("campanha", "usuario", "campanha__banco")
-
-        nome = request.GET.get("nome")
-        banco_id = request.GET.get("banco")
-        usuario_id = request.GET.get("usuario")
-        status = request.GET.get("status")
-        data_acao_inicio = request.GET.get("data_acao_inicio")
-        data_acao_fim = request.GET.get("data_acao_fim")
-
-        if nome:
-            historicos = historicos.filter(campanha_nome__icontains=nome)
-        if banco_id:
-            historicos = historicos.filter(campanha__banco_id=banco_id)
-        if usuario_id:
-            historicos = historicos.filter(usuario_id=usuario_id)
-        if status:
-            historicos = historicos.filter(campanha__status_manual=status)
-        if data_acao_inicio and data_acao_fim:
-            historicos = historicos.filter(data_hora__date__range=[data_acao_inicio, data_acao_fim])
-        elif data_acao_inicio:
-            historicos = historicos.filter(data_hora__date__gte=data_acao_inicio)
-        elif data_acao_fim:
-            historicos = historicos.filter(data_hora__date__lte=data_acao_fim)
-
-        for h in historicos.order_by("-data_hora"):
-            campanha = h.campanha
-            banco = campanha.banco.nome if campanha else "—"
-            status = campanha.status_manual if campanha else "—"
-            vig_inicio = h.vigencia_inicio.strftime("%d/%m/%Y") if h.vigencia_inicio else ""
-            vig_fim = h.vigencia_fim.strftime("%d/%m/%Y") if h.vigencia_fim else "—"
-            data_acao = h.data_hora.strftime("%d/%m/%Y %H:%M")
-
-            ws.append([
-                h.id,
-                banco,
-                h.campanha_nome,
-                status,
-                h.acao,
-                h.usuario.username if h.usuario else "Sistema",
-                vig_inicio,
-                vig_fim,
-                data_acao,
-                h.detalhe
-            ])
+    else:
+        # Relatório de alterações permanece inalterado
+        return gerar_relatorio_alteracoes(request, wb, ws)
 
     # Ajustar largura automática das colunas
     for col in ws.columns:
         max_length = max(len(str(cell.value or "")) for cell in col)
         ws.column_dimensions[get_column_letter(col[0].column)].width = max_length + 2
 
-    # Geração do arquivo
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )

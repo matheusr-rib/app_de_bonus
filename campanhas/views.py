@@ -240,7 +240,7 @@ class CampanhaUpdateView(View):
     def post(self, request, pk):
         campanha = get_object_or_404(Campanha, pk=pk)
 
-        form_campanha = CampanhaBaseForm(request.POST, request.FILES)
+        form_campanha = CampanhaBaseForm(request.POST, request.FILES, instance=campanha)
         form_recebimento = Recebimento_E_Repasse(request.POST, instance=campanha)
         form_vigencia = VigenciaERegras(request.POST, instance=campanha)
         possui_meta = 'possui_meta' in request.POST or campanha.possui_meta
@@ -249,7 +249,13 @@ class CampanhaUpdateView(View):
         if form_campanha.is_valid() and form_recebimento.is_valid() and form_vigencia.is_valid():
             campanha = form_campanha.save(commit=False)
 
-            # Campos adicionais
+            # ✅ Remover anexo somente se o usuário marcou e NÃO enviou um novo arquivo
+            if request.POST.get('remover_anexo') == '1' and 'anexo' not in request.FILES:
+                if campanha.anexo:
+                    campanha.anexo.delete(save=False)
+                campanha.anexo = None
+
+            # 🔥 Campos adicionais
             campanha.recebido = form_recebimento.cleaned_data.get('recebido')
             campanha.parametrizado_wb = form_recebimento.cleaned_data.get('parametrizado_wb')
             campanha.tipo_valor_recebido = form_recebimento.cleaned_data.get('tipo_valor_recebido')
@@ -268,16 +274,12 @@ class CampanhaUpdateView(View):
             campanha.possui_meta = possui_meta
             campanha.save()
 
-            # 🔁 AGORA instanciamos o formset com a instância salva
+            # 🔁 Salvar faixas de meta
             faixa_formset = FaixaMetaFormSet(request.POST, instance=campanha, prefix='faixas')
-
             if possui_meta:
                 if faixa_formset.is_valid():
                     faixa_formset.save()
                 else:
-                    print('📛 Formset inválido:')
-                    print(faixa_formset.errors)
-                    print(faixa_formset.non_form_errors())
                     return render(request, self.template_name, {
                         'form_campanha': form_campanha,
                         'form_recebimento': form_recebimento,
@@ -289,7 +291,7 @@ class CampanhaUpdateView(View):
 
             return redirect('campanha_list')
 
-        # Se algum form principal for inválido
+        # Se algum form for inválido, re-renderiza com erros
         faixa_formset = FaixaMetaFormSet(request.POST, instance=campanha, prefix='faixas')
         return render(request, self.template_name, {
             'form_campanha': form_campanha,

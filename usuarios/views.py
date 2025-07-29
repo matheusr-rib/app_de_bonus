@@ -28,8 +28,20 @@ def admin_usuarios_view(request):
     usuarios = Usuario.objects.exclude(id=request.user.id)
 
     if request.method == 'POST':
+
+        # ✅ EXCLUSÃO DE USUÁRIO
+        if 'delete_user_id' in request.POST:
+            delete_id = request.POST.get('delete_user_id')
+            try:
+                user = Usuario.objects.get(id=delete_id)
+                user.delete()  # remove do banco e credenciais
+                messages.success(request, f"Usuário {user.username} excluído com sucesso.")
+            except Usuario.DoesNotExist:
+                messages.error(request, "Usuário não encontrado para exclusão.")
+            return redirect('admin_usuarios')
+
+        # ✅ ALTERAÇÃO DE TIPO
         if 'user_id' in request.POST:
-            # Atualização de tipo
             user_id = request.POST.get('user_id')
             novo_tipo = request.POST.get('tipo')
             try:
@@ -42,18 +54,17 @@ def admin_usuarios_view(request):
                 messages.error(request, "Usuário não encontrado.")
             return redirect('admin_usuarios')
 
+        # ✅ CRIAÇÃO DE USUÁRIO
+        form_criacao = UsuarioCreateForm(request.POST)
+        if form_criacao.is_valid():
+            form_criacao.save()
+            messages.success(request, "Usuário criado com sucesso.")
+            return redirect('admin_usuarios')
         else:
-            # Criação de usuário
-            form_criacao = UsuarioCreateForm(request.POST)
-            if form_criacao.is_valid():
-                form_criacao.save()
-                messages.success(request, "Usuário criado com sucesso.")
-                return redirect('admin_usuarios')
-            else:
-                return render(request, 'admin_usuarios.html', {
-                    'usuarios': usuarios,
-                    'form_criacao': form_criacao
-                })
+            return render(request, 'admin_usuarios.html', {
+                'usuarios': usuarios,
+                'form_criacao': form_criacao
+            })
 
     return render(request, 'admin_usuarios.html', {
         'usuarios': usuarios,

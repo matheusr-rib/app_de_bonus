@@ -30,6 +30,10 @@
 .toggle-checkbox:checked::before {
   transform: translateX(1.1rem);
 }
+
+.clearable-file-input {
+    display: none !important;
+}
 </style>
 
 <div class="max-w-6xl mx-auto">
@@ -238,13 +242,23 @@
       <h3 class="text-xl font-semibold text-purple-700 mb-4">
         <i class="fa fa-paperclip mr-2 text-gray-500"></i> Anexo da Campanha
       </h3>
+
+      {% if form_campanha.instance.anexo %}
+        <p class="text-sm text-gray-600 mb-2">
+          Atualmente: <strong>{{ form_campanha.instance.anexo.name }}</strong>
+        </p>
+        <button type="button" id="remover-anexo-btn"
+                class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded mb-3">
+          Remover Anexo
+        </button>
+        <input type="hidden" name="remover_anexo" id="remover-anexo-input" value="0">
+      {% endif %}
+
       <div class="grid md:grid-cols-2 gap-6">
         <div class="md:col-span-2">
           <label class="block text-sm font-medium text-gray-700">Selecionar anexo:</label>
-          {{ form_campanha.anexo|add_class:"w-full p-2 border border-gray-300 rounded bg-white" }}
-          {% if form_campanha.anexo.errors %}
-            <p class="text-red-500 text-sm mt-1">{{ form_campanha.anexo.errors.0 }}</p>
-          {% endif %}
+          <!-- 🔥 Apenas o input de arquivo -->
+          <input type="file" name="anexo" id="id_anexo" class="w-full p-2 border border-gray-300 rounded bg-white">
         </div>
       </div>
     </section>
@@ -266,6 +280,7 @@
     const totalFormsInput = document.getElementById('id_faixas-TOTAL_FORMS');
     const emptyFormTemplate = document.getElementById('faixa-empty-form')?.innerHTML;
 
+    // 🔄 Controle de exibição das faixas de meta
     function toggleCamposMeta() {
       if (!possuiMetaCheckbox) return;
       const show = possuiMetaCheckbox.checked;
@@ -273,6 +288,7 @@
       recebimentoCampos.style.display = show ? 'none' : 'grid';
     }
 
+    // 🔄 Botão remover faixa de meta
     function attachRemoveEvents() {
       document.querySelectorAll('.remove-faixa-btn').forEach(function (btn) {
         btn.onclick = function () {
@@ -281,7 +297,7 @@
           if (deleteInput) {
             deleteInput.setAttribute('checked', 'checked');
             deleteInput.checked = true;
-            deleteInput.value = 'on';  // 🔥 Garante que será enviado no POST
+            deleteInput.value = 'on';  // 🔥 garante envio no POST
             formDiv.style.display = 'none';
           }
         };
@@ -302,6 +318,22 @@
         formsetContainer.insertAdjacentHTML('beforeend', newFormHtml);
         totalFormsInput.value = currentFormCount + 1;
         attachRemoveEvents();
+      });
+    }
+
+    // ✅ 🔥 NOVA PARTE: Botão Remover Anexo
+    const removerBtn = document.getElementById('remover-anexo-btn');
+    const removerInput = document.getElementById('remover-anexo-input');
+    const fileInput = document.getElementById('id_anexo');
+
+    if (removerBtn) {
+      removerBtn.addEventListener('click', function () {
+        if (confirm("Deseja remover o anexo atual?")) {
+          removerInput.value = "1";         // marca para remoção
+          fileInput.value = "";             // limpa input de arquivo
+          removerBtn.disabled = true;
+          removerBtn.innerText = "Anexo marcado para remoção";
+        }
       });
     }
   });

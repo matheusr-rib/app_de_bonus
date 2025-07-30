@@ -10,9 +10,11 @@ from reportlab.pdfgen import canvas
 from django.http import HttpResponse
 from django.http import FileResponse
 from django.conf import settings
+from django.contrib import messages
+from django.db import transaction
 from historico.models import HistoricoAcao
 from .services import atualizar_campanhas_expiradas
-from .models import Campanha
+from .models import Campanha,FaixaMeta
 from .forms import (
     CampanhaBaseForm,
     Recebimento_E_Repasse,
@@ -387,3 +389,37 @@ class CampanhaControleView(ListView):
         )
 
         return context
+    
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(tipo_usuario_requerido('editor', 'master'), name='dispatch')
+class CampanhaDuplicarView(View):
+    def post(self, request, pk):
+        campanha_original = get_object_or_404(Campanha, pk=pk)
+
+        # 🔁 Clona campanha
+        campanha_nova = Campanha.objects.get(pk=pk)
+        campanha_nova.pk = None
+        campanha_nova.campanha = f"{campanha_original.campanha} (Cópia)"
+        campanha_nova.save()
+
+        # 🔁 Clona faixas de meta
+        faixas = FaixaMeta.objects.filter(campanha=campanha_original)
+        for faixa in faixas:
+            faixa.pk = None
+            faixa.campanha = campanha_nova
+            faixa.save()
+
+        # ✅ Histórico - registra como duplicação com usuário
+        HistoricoAcao.objects.create(
+            campanha=campanha_nova,
+            campanha_nome=campanha_nova.campanha,
+            usuario=request.user,
+            acao="criada",
+            detalhe=f"Campanha criada por duplicação. Usuário: {request.user.username}",
+            vigencia_inicio=campanha_nova.vigencia_inicio,
+            vigencia_fim=campanha_nova.vigencia_fim,
+        )
+
+        return redirect('campanha_list')

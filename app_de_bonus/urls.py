@@ -26,6 +26,7 @@ from campanhas.views import (
     CampanhaUpdateView,
     CampanhaDeleteView,
     CampanhaAnexoView,
+    CampanhaDuplicarView,
 )
 from historico.views import historico_listagem, exportar_relatorio_excel, relatorios_campanha
 
@@ -45,4 +46,5 @@ urlpatterns = [
     path('relatorios/', relatorios_campanha, name='relatorios_campanha'),
     path('relatorios/exportar/', exportar_relatorio_excel, name='exportar_relatorio_excel'),
     path('campanhas/<int:pk>/anexo/', CampanhaAnexoView.as_view(), name='campanha_anexo_pdf'),
+    path('<int:pk>/duplicar/', CampanhaDuplicarView.as_view(), name='campanha_duplicar'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

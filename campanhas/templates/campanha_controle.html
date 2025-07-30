@@ -3,19 +3,17 @@
 
 {% block content %}
 <h2 class="text-3xl font-bold text-purple-800 mb-8">Controle de Campanhas</h2>
+
 <form method="get" class="bg-white p-6 mb-8 border border-gray-200 shadow rounded-lg">
   <div class="grid md:grid-cols-5 gap-4">
-    <!-- Nome da campanha -->
     <input type="text" name="nome" placeholder="🔍 Nome da campanha"
            value="{{ filtro_nome }}"
            class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600" />
 
-    <!-- Banco -->
     <input type="text" name="banco" placeholder="🏦 Nome do banco"
            value="{{ filtro_banco }}"
            class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600" />
 
-    <!-- Status -->
     <select name="status"
             class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600">
       <option value="todas" {% if filtro_status == 'todas' %}selected{% endif %}>Todas</option>
@@ -24,17 +22,14 @@
       {% endfor %}
     </select>
 
-    <!-- Vigência Início -->
     <input type="date" name="vigencia_inicio" value="{{ filtro_vigencia_inicio }}"
            class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600"
            placeholder="Data início" />
 
-    <!-- Vigência Fim -->
     <input type="date" name="vigencia_fim" value="{{ filtro_vigencia_fim }}"
            class="border border-gray-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-purple-600"
            placeholder="Data fim" />
 
-    <!-- Botão -->
     <div class="flex items-end">
       <button type="submit"
               class="w-full backdrop-blur-sm bg-orange-500/90 hover:bg-orange-600/90 text-white font-semibold px-6 py-2 rounded-xl shadow-sm transition">
@@ -43,6 +38,7 @@
     </div>
   </div>
 </form>
+
 <div class="overflow-x-auto">
   <table class="min-w-full bg-white shadow border border-gray-200 rounded-lg overflow-hidden">
     <thead class="bg-gray-100 text-gray-700 text-sm uppercase tracking-wider">
@@ -88,11 +84,20 @@
                class="bg-indigo-600 text-white text-sm px-4 py-2 rounded hover:bg-indigo-700 transition font-semibold">
               Editar
             </a>
-             <a href="{% url 'campanha_deletar' campanha.id %}"
-        
-              class="bg-red-600 text-white text-sm px-4 py-2 rounded hover:bg-red-700 transition font-semibold">
+
+            <!-- ✅ Botão de Duplicar -->
+            <form action="{% url 'campanha_duplicar' campanha.id %}" method="post">
+              {% csrf_token %}
+              <button type="submit"
+                      class="bg-blue-500 text-white text-sm px-4 py-2 rounded hover:bg-blue-600 transition font-semibold">
+                Duplicar
+              </button>
+            </form>
+
+            <a href="{% url 'campanha_deletar' campanha.id %}"
+               class="bg-red-600 text-white text-sm px-4 py-2 rounded hover:bg-red-700 transition font-semibold">
               Deletar
-              </a>
+            </a>
           </td>
         </tr>
       {% empty %}

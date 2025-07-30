@@ -53,9 +53,15 @@ class Faixas_De_Meta(forms.ModelForm):
         model = FaixaMeta
         fields = ['faixa_inicial', 'faixa_final', 'valor_recebido', 'tipo_valor', 'faixa_garantida']
         widgets = {
-            'faixa_inicial': forms.TextInput(attrs={'placeholder': '0,00'}),
-            'faixa_final': forms.TextInput(attrs={'placeholder': 'opcional'}),
-            'valor_recebido': forms.TextInput(attrs={'placeholder': '0,00'}),
+            'faixa_inicial': forms.NumberInput(attrs={
+                'step': '0.01', 'placeholder': '0,00', 'inputmode': 'decimal'
+            }),
+            'faixa_final': forms.NumberInput(attrs={
+                'step': '0.01', 'placeholder': 'opcional', 'inputmode': 'decimal'
+            }),
+            'valor_recebido': forms.NumberInput(attrs={
+                'step': '0.01', 'placeholder': '0,00', 'inputmode': 'decimal'
+            }),
         }
         error_messages = {
             'faixa_inicial': {
@@ -67,11 +73,6 @@ class Faixas_De_Meta(forms.ModelForm):
                 'invalid': 'Digite um número válido para valor recebido.',
             },
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in ['faixa_inicial', 'faixa_final', 'valor_recebido']:
-            self.fields[field].localize = True
 
 
 class Recebimento_E_Repasse(forms.ModelForm):

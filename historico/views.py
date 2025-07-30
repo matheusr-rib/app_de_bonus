@@ -9,10 +9,8 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from campanhas.models import Campanha
-from datetime import datetime,date
-from io import BytesIO
-import pandas as pd
-from django.db import models
+from datetime import datetime
+from django.utils.timezone import localtime
 
 
 @login_required(login_url='login')
@@ -49,9 +47,9 @@ def historico_listagem(request):
     usuarios = queryset.values_list('usuario__id', 'usuario__username').distinct()
 
     status_choices = [
-    ('ATIVA', 'Ativa'),
-    ('INATIVA', 'Inativa'),
-    ('EM ANALISE', 'Em análise'),
+        ('ATIVA', 'Ativa'),
+        ('INATIVA', 'Inativa'),
+        ('EM ANALISE', 'Em análise'),
     ]
 
     context = {
@@ -61,6 +59,7 @@ def historico_listagem(request):
         'status_choices': status_choices,
     }
     return render(request, 'historico_listagem.html', context)
+
 
 @login_required(login_url='login')
 @tipo_usuario_requerido('master')
@@ -75,7 +74,6 @@ def relatorios_campanha(request):
         ]
     }
     return render(request, 'relatorios_campanha.html', context)
-
 
 
 @login_required(login_url='login')
@@ -152,10 +150,9 @@ def exportar_relatorio_excel(request):
                 ])
 
     else:
-        # Relatório de alterações permanece inalterado
+        # Relatório de alterações
         return gerar_relatorio_alteracoes(request, wb, ws)
 
-    # Ajustar largura automática das colunas
     for col in ws.columns:
         max_length = max(len(str(cell.value or "")) for cell in col)
         ws.column_dimensions[get_column_letter(col[0].column)].width = max_length + 2
@@ -164,6 +161,68 @@ def exportar_relatorio_excel(request):
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
     filename = f"relatorio_{tipo}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename={filename}'
+    wb.save(response)
+    return response
+
+
+def gerar_relatorio_alteracoes(request, wb, ws):
+    ws.title = "Relatório de Alterações"
+    headers = ["Período da Ação", "Banco", "Campanha", "Usuário", "Status"]
+    ws.append(headers)
+
+    queryset = HistoricoAcao.objects.select_related("campanha__banco", "usuario")
+
+    # Filtros
+    nome = request.GET.get('nome')
+    banco_id = request.GET.get('banco')
+    usuario_id = request.GET.get('usuario')
+    data_inicio = request.GET.get('data_acao_inicio')
+    data_fim = request.GET.get('data_acao_fim')
+    status = request.GET.get('status')
+
+    if status:
+        queryset = queryset.filter(campanha__status_manual=status)
+    if nome:
+        queryset = queryset.filter(campanha_nome__icontains=nome)
+    if banco_id:
+        queryset = queryset.filter(campanha__banco_id=banco_id)
+    if usuario_id:
+        queryset = queryset.filter(usuario_id=usuario_id)
+    if data_inicio:
+        queryset = queryset.filter(data_hora__date__gte=data_inicio)
+    if data_fim:
+        queryset = queryset.filter(data_hora__date__lte=data_fim)
+
+    queryset = queryset.order_by('-data_hora')
+
+    for h in queryset:
+        data_acao = localtime(h.data_hora).strftime("%d/%m/%Y %H:%M")
+        banco_nome = h.campanha.banco.nome if h.campanha and h.campanha.banco else "—"
+        usuario_nome = h.usuario.username if h.usuario else "Sistema"
+
+        # 👇 Nova lógica para ações automáticas do sistema
+        if h.usuario is None and h.acao.lower() in ["editado", "encerrado"]:
+            status_display = "Campanha encerrada automaticamente pelo sistema"
+        else:
+            status_display = h.acao.capitalize()
+
+        ws.append([
+            data_acao,
+            banco_nome,
+            h.campanha_nome,
+            usuario_nome,
+            status_display
+        ])
+
+    for col in ws.columns:
+        max_length = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[get_column_letter(col[0].column)].width = max_length + 2
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    filename = f"relatorio_alteracoes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     response['Content-Disposition'] = f'attachment; filename={filename}'
     wb.save(response)
     return response

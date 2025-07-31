@@ -5,13 +5,14 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from usuarios.decorators import tipo_usuario_requerido
 import os
+from django.utils import timezone
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from django.http import HttpResponse
 from django.http import FileResponse
 from django.conf import settings
 from django.contrib import messages
-from django.db import transaction
+from django.utils.timezone import localtime
 from historico.models import HistoricoAcao
 from .services import atualizar_campanhas_expiradas
 from .models import Campanha,FaixaMeta
@@ -315,7 +316,7 @@ class CampanhaDeleteView(DeleteView):
         # 💾 Salvar o histórico ANTES da exclusão
         if request.user.is_authenticated:
             HistoricoAcao.objects.create(
-            campanha=None,  # campanha vai virar nula após exclusão
+            campanha=None, 
             campanha_nome=self.object.campanha,
             usuario=request.user,
             acao='deletado',
@@ -398,7 +399,7 @@ class CampanhaDuplicarView(View):
     def post(self, request, pk):
         campanha_original = get_object_or_404(Campanha, pk=pk)
 
-        # 🔁 Clona campanha
+        # 🔁 Clona a campanha
         campanha_nova = Campanha.objects.get(pk=pk)
         campanha_nova.pk = None
         campanha_nova.campanha = f"{campanha_original.campanha} (Cópia)"
@@ -411,15 +412,43 @@ class CampanhaDuplicarView(View):
             faixa.campanha = campanha_nova
             faixa.save()
 
-        # ✅ Histórico - registra como duplicação com usuário
+        # ✅ Registra histórico de duplicação
         HistoricoAcao.objects.create(
             campanha=campanha_nova,
             campanha_nome=campanha_nova.campanha,
             usuario=request.user,
-            acao="criada",
-            detalhe=f"Campanha criada por duplicação. Usuário: {request.user.username}",
+            acao='duplicada',  # 🔥 Nova ação
+            detalhe=f"Campanha duplicada a partir da campanha '{campanha_original.campanha}' (ID {campanha_original.pk})",
             vigencia_inicio=campanha_nova.vigencia_inicio,
             vigencia_fim=campanha_nova.vigencia_fim,
+            campanha_id_ref=campanha_nova.pk
         )
 
+        messages.success(request, f"Campanha '{campanha_original.campanha}' duplicada com sucesso.")
         return redirect('campanha_list')
+    
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(tipo_usuario_requerido('editor', 'master'), name='dispatch')
+class CampanhaEncerrarVigenciaView(View):
+    def post(self, request, pk):
+        campanha = get_object_or_404(Campanha, pk=pk)
+
+        campanha.status_manual = 'INATIVA'
+        campanha.vigencia_fim = localtime(timezone.now()).date()
+        campanha.save()
+
+        # ✅ Registra histórico com ação clara
+        HistoricoAcao.objects.create(
+            campanha=campanha,
+            campanha_nome=campanha.campanha,
+            usuario=request.user,
+            acao='vigência encerrada',  # 🔥 Ação customizada
+            detalhe="Campanha encerrada manualmente via botão de Encerrar Vigência",
+            vigencia_inicio=campanha.vigencia_inicio,
+            vigencia_fim=campanha.vigencia_fim,
+            campanha_id_ref=campanha.pk
+        )
+
+        messages.success(request, f'A vigência da campanha "{campanha.campanha}" foi encerrada.')
+        return redirect('campanha_controle')

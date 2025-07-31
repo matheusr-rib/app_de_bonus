@@ -12,8 +12,16 @@
 
 <!-- FILTROS -->
 <form method="get" class="bg-white p-8 rounded-2xl border-l-4 border-purple-600 shadow-sm mb-10">
-  <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+  <div class="grid grid-cols-1 md:grid-cols-6 gap-6">
     
+    <!-- ID Campanha -->
+    <div class="flex flex-col gap-1">
+      <label class="text-sm font-medium text-gray-600">ID Campanha</label>
+      <input type="text" name="campanha_id" placeholder="Ex: 12"
+             value="{{ request.GET.campanha_id }}"
+             class="border-b-2 border-gray-300 focus:border-purple-600 text-sm px-2 py-1 outline-none bg-transparent">
+    </div>
+
     <!-- Nome -->
     <div class="flex flex-col gap-1">
       <label class="text-sm font-medium text-gray-600">Nome da campanha</label>
@@ -25,15 +33,9 @@
     <!-- Banco -->
     <div class="flex flex-col gap-1">
       <label class="text-sm font-medium text-gray-600">Banco</label>
-      <select name="banco"
-              class="border-b-2 border-gray-300 focus:border-purple-600 text-sm px-2 py-1 outline-none bg-transparent">
-        <option value="">Todos os bancos</option>
-        {% for banco in bancos %}
-          <option value="{{ banco.id }}" {% if request.GET.banco == banco.id|stringformat:"s" %}selected{% endif %}>
-            {{ banco.nome }}
-          </option>
-        {% endfor %}
-      </select>
+      <input type="text" name="banco" placeholder="Digite o nome do banco..."
+             value="{{ request.GET.banco }}"
+             class="border-b-2 border-gray-300 focus:border-purple-600 text-sm px-2 py-1 outline-none bg-transparent">
     </div>
 
     <!-- Usuário -->
@@ -85,7 +87,9 @@
   <table class="min-w-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
     <thead class="bg-gray-100 text-gray-700 text-sm font-medium">
       <tr>
+        <th class="px-6 py-3 text-left">ID</th>
         <th class="px-6 py-3 text-left">Campanha</th>
+        <th class="px-6 py-3 text-left">Banco</th>
         <th class="px-6 py-3 text-left">Status</th>
         <th class="px-6 py-3 text-left">Ação</th>
         <th class="px-6 py-3 text-left">Usuário</th>
@@ -96,12 +100,26 @@
     <tbody class="text-sm divide-y divide-gray-200 text-gray-800">
       {% for historico in page_obj %}
         <tr class="hover:bg-gray-50">
+          <!-- ID -->
+          <td class="px-6 py-4 font-mono text-xs text-gray-600">
+            {{ historico.campanha_id|default:"—" }}
+          </td>
+
           <!-- Campanha -->
           <td class="px-6 py-4 font-medium">
             {% if historico.campanha %}
               {{ historico.campanha.campanha }}
             {% else %}
               {{ historico.campanha_nome }} <span class="text-gray-400 italic">(excluída)</span>
+            {% endif %}
+          </td>
+
+          <!-- Banco -->
+          <td class="px-6 py-4 text-gray-700">
+            {% if historico.campanha and historico.campanha.banco %}
+              {{ historico.campanha.banco.nome }}
+            {% else %}
+              <span class="text-gray-400 italic">—</span>
             {% endif %}
           </td>
 
@@ -135,11 +153,15 @@
                 bg-purple-100 text-purple-700
               {% elif historico.acao == 'deletado' %}
                 bg-red-100 text-red-700
+              {% elif historico.acao == 'duplicada' %}
+                bg-cyan-100 text-cyan-700
+              {% elif historico.acao == 'vigência encerrada' %}
+                bg-orange-100 text-orange-700
               {% else %}
                 bg-gray-100 text-gray-600
               {% endif %}
             ">
-              {{ historico.acao|capfirst }}
+              {{ historico.acao_legivel }}
             </span>
           </td>
 
@@ -168,7 +190,7 @@
         </tr>
       {% empty %}
         <tr>
-          <td colspan="6" class="px-6 py-4 text-center text-gray-500">Nenhum histórico encontrado.</td>
+          <td colspan="8" class="px-6 py-4 text-center text-gray-500">Nenhum histórico encontrado.</td>
         </tr>
       {% endfor %}
     </tbody>

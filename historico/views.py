@@ -18,20 +18,27 @@ from django.utils.timezone import localtime
 def historico_listagem(request):
     queryset = HistoricoAcao.objects.select_related('campanha', 'usuario')
 
-    # Filtros
+    # 🔍 Captura filtros
+    campanha_id = request.GET.get('campanha_id')
     nome = request.GET.get('nome')
-    banco_id = request.GET.get('banco')
+    banco_nome = request.GET.get('banco')
     usuario_id = request.GET.get('usuario')
     data_inicio = request.GET.get('data_inicio')
     data_fim = request.GET.get('data_fim')
     status = request.GET.get('status')
 
+    # ✅ Filtro por ID de campanha (com validação)
+    if campanha_id and campanha_id.isdigit():
+        queryset = queryset.filter(campanha_id=int(campanha_id))
+
+    # ✅ Filtro por nome usando o campo seguro
+    if nome:
+        queryset = queryset.filter(campanha_nome__icontains=nome)
+
     if status:
         queryset = queryset.filter(campanha__status_manual=status)
-    if nome:
-        queryset = queryset.filter(campanha__campanha__icontains=nome)
-    if banco_id:
-        queryset = queryset.filter(campanha__banco_id=banco_id)
+    if banco_nome:
+        queryset = queryset.filter(campanha__banco__nome__icontains=banco_nome)
     if usuario_id:
         queryset = queryset.filter(usuario_id=usuario_id)
     if data_inicio:
@@ -39,6 +46,7 @@ def historico_listagem(request):
     if data_fim:
         queryset = queryset.filter(vigencia_fim__lte=data_fim)
 
+    # 🔄 Paginação
     paginator = Paginator(queryset.order_by('-data_hora'), 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -86,24 +94,26 @@ def exportar_relatorio_excel(request):
     if tipo == "vigencias":
         ws.title = "Relatório de Vigências"
         headers = [
-            "Banco", "Campanha", "Status", "Vigência Início", "Vigência Fim",
+            "ID Campanha","Banco", "Campanha", "Status", "Vigência Início", "Vigência Fim",
             "Faixa Inicial", "Faixa Final", "Tipo Valor", "Valor Recebido", "Faixa Garantida"
         ]
         ws.append(headers)
 
         campanhas = Campanha.objects.select_related("banco").prefetch_related("faixas")
 
-        # Filtros
+        campanha_id = request.GET.get('campanha_id')
         nome = request.GET.get("nome")
-        banco_id = request.GET.get("banco")
+        banco_nome = request.GET.get("banco")
         status = request.GET.get("status")
         data_inicio = request.GET.get("data_inicio")
         data_fim = request.GET.get("data_fim")
 
+        if campanha_id:
+            campanhas = campanhas.filter(id=campanha_id)
         if nome:
             campanhas = campanhas.filter(campanha__icontains=nome)
-        if banco_id:
-            campanhas = campanhas.filter(banco_id=banco_id)
+        if banco_nome:
+            campanhas = campanhas.filter(banco__nome__icontains=banco_nome)
         if status:
             campanhas = campanhas.filter(status_manual=status)
 
@@ -128,6 +138,7 @@ def exportar_relatorio_excel(request):
             if faixas.exists():
                 for faixa in faixas:
                     ws.append([
+                        c.id,  # ✅ ID da campanha aqui
                         c.banco.nome,
                         c.campanha,
                         c.status_manual,
@@ -141,6 +152,7 @@ def exportar_relatorio_excel(request):
                     ])
             else:
                 ws.append([
+                    c.id,  # ✅ ID da campanha aqui
                     c.banco.nome,
                     c.campanha,
                     c.status_manual,
@@ -168,25 +180,27 @@ def exportar_relatorio_excel(request):
 
 def gerar_relatorio_alteracoes(request, wb, ws):
     ws.title = "Relatório de Alterações"
-    headers = ["Período da Ação", "Banco", "Campanha", "Usuário", "Status"]
+    headers = ["ID Campanha", "Período da Ação", "Banco", "Campanha", "Usuário", "Status"]
     ws.append(headers)
 
     queryset = HistoricoAcao.objects.select_related("campanha__banco", "usuario")
 
-    # Filtros
+    campanha_id = request.GET.get('campanha_id')
     nome = request.GET.get('nome')
-    banco_id = request.GET.get('banco')
+    banco_nome = request.GET.get('banco')
     usuario_id = request.GET.get('usuario')
     data_inicio = request.GET.get('data_acao_inicio')
     data_fim = request.GET.get('data_acao_fim')
     status = request.GET.get('status')
 
+    if campanha_id:
+        queryset = queryset.filter(campanha_id=campanha_id)
     if status:
         queryset = queryset.filter(campanha__status_manual=status)
     if nome:
         queryset = queryset.filter(campanha_nome__icontains=nome)
-    if banco_id:
-        queryset = queryset.filter(campanha__banco_id=banco_id)
+    if banco_nome:
+        queryset = queryset.filter(campanha__banco__nome__icontains=banco_nome)
     if usuario_id:
         queryset = queryset.filter(usuario_id=usuario_id)
     if data_inicio:
@@ -201,13 +215,11 @@ def gerar_relatorio_alteracoes(request, wb, ws):
         banco_nome = h.campanha.banco.nome if h.campanha and h.campanha.banco else "—"
         usuario_nome = h.usuario.username if h.usuario else "Sistema"
 
-        # 👇 Nova lógica para ações automáticas do sistema
-        if h.usuario is None and h.acao.lower() in ["editado", "encerrado"]:
-            status_display = "Campanha encerrada automaticamente pelo sistema"
-        else:
-            status_display = h.acao.capitalize()
+        # ✅ Usa método do model para obter nome amigável
+        status_display = h.acao_legivel()
 
         ws.append([
+            h.campanha_id or "—",
             data_acao,
             banco_nome,
             h.campanha_nome,

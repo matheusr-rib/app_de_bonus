@@ -15,8 +15,16 @@
     <p class="text-sm text-gray-500">Filtre as alterações realizadas por campanha, usuário, status ou período de ação.</p>
   </div>
 
-  <form method="get" action="{% url 'exportar_relatorio_excel' %}" class="grid grid-cols-1 md:grid-cols-5 gap-6">
+  <form method="get" action="{% url 'exportar_relatorio_excel' %}" class="grid grid-cols-1 md:grid-cols-6 gap-6">
     <input type="hidden" name="tipo" value="alteracoes">
+
+    <!-- ID Campanha -->
+    <div class="flex flex-col gap-1">
+      <label class="text-sm text-gray-600 font-medium">ID Campanha</label>
+      <input type="text" name="campanha_id" value="{{ request.GET.campanha_id }}"
+             class="border-b-2 border-gray-300 focus:border-purple-600 px-2 py-1 text-sm outline-none bg-transparent"
+             placeholder="Ex: 12">
+    </div>
 
     <!-- Nome da campanha -->
     <div class="flex flex-col gap-1">
@@ -29,13 +37,9 @@
     <!-- Banco -->
     <div class="flex flex-col gap-1">
       <label class="text-sm text-gray-600 font-medium">Banco</label>
-      <select name="banco"
-              class="border-b-2 border-gray-300 focus:border-purple-600 px-2 py-1 text-sm outline-none bg-transparent">
-        <option value="">Todos os bancos</option>
-        {% for id, nome in bancos %}
-          <option value="{{ id }}" {% if request.GET.banco == id|stringformat:"s" %}selected{% endif %}>{{ nome }}</option>
-        {% endfor %}
-      </select>
+      <input type="text" name="banco" value="{{ request.GET.banco }}"
+             class="border-b-2 border-gray-300 focus:border-purple-600 px-2 py-1 text-sm outline-none bg-transparent"
+             placeholder="Digite o nome do banco...">
     </div>
 
     <!-- Usuário -->
@@ -74,7 +78,7 @@
     </div>
 
     <!-- Botão -->
-    <div class="md:col-span-5 text-right">
+    <div class="md:col-span-6 text-right">
       <button type="submit"
               class="backdrop-blur-sm bg-orange-500/90 hover:bg-orange-600/90 text-white font-semibold px-6 py-2 rounded-xl shadow-sm transition">
         Exportar Excel
@@ -90,8 +94,16 @@
     <p class="text-sm text-gray-500">Visualize campanhas existentes em determinados períodos e status.</p>
   </div>
 
-  <form method="get" action="{% url 'exportar_relatorio_excel' %}" class="grid grid-cols-1 md:grid-cols-4 gap-6">
+  <form method="get" action="{% url 'exportar_relatorio_excel' %}" class="grid grid-cols-1 md:grid-cols-5 gap-6">
     <input type="hidden" name="tipo" value="vigencias">
+
+    <!-- ID Campanha -->
+    <div class="flex flex-col gap-1">
+      <label class="text-sm text-gray-600 font-medium">ID Campanha</label>
+      <input type="text" name="campanha_id" value="{{ request.GET.campanha_id }}"
+             class="border-b-2 border-gray-300 focus:border-purple-600 px-2 py-1 text-sm outline-none bg-transparent"
+             placeholder="Ex: 12">
+    </div>
 
     <!-- Nome -->
     <div class="flex flex-col gap-1">
@@ -104,13 +116,9 @@
     <!-- Banco -->
     <div class="flex flex-col gap-1">
       <label class="text-sm text-gray-600 font-medium">Banco</label>
-      <select name="banco"
-              class="border-b-2 border-gray-300 focus:border-purple-600 px-2 py-1 text-sm outline-none bg-transparent">
-        <option value="">Todos os bancos</option>
-        {% for id, nome in bancos %}
-          <option value="{{ id }}" {% if request.GET.banco == id|stringformat:"s" %}selected{% endif %}>{{ nome }}</option>
-        {% endfor %}
-      </select>
+      <input type="text" name="banco" value="{{ request.GET.banco }}"
+             class="border-b-2 border-gray-300 focus:border-purple-600 px-2 py-1 text-sm outline-none bg-transparent"
+             placeholder="Digite o nome do banco...">
     </div>
 
     <!-- Status -->
@@ -137,7 +145,7 @@
     </div>
 
     <!-- Botão -->
-    <div class="md:col-span-4 text-right">
+    <div class="md:col-span-5 text-right">
       <button type="submit"
               class="backdrop-blur-sm bg-orange-500/90 hover:bg-orange-600/90 text-white font-semibold px-6 py-2 rounded-xl shadow-sm transition">
         Exportar Excel
@@ -145,6 +153,5 @@
     </div>
   </form>
 </section>
-
 
 {% endblock %}

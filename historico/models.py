@@ -7,6 +7,7 @@ from django.conf import settings
 
 
 class HistoricoAcao(models.Model):
+    campanha_id_ref = models.PositiveIntegerField(null=True, blank=True)
     campanha = models.ForeignKey(
         Campanha,
         on_delete=models.SET_NULL,
@@ -26,12 +27,23 @@ class HistoricoAcao(models.Model):
     vigencia_fim = models.DateField(null=True, blank=True)
     data_hora = models.DateTimeField(auto_now_add=True)
     detalhe = models.TextField(blank=True)
+    
 
     def __str__(self):
         return f"{self.acao} - {self.campanha_nome}"
+    
+    def acao_legivel(self):
+        acao_map = {
+            'vigência encerrada': 'Vigência Encerrada',
+            'duplicada': 'Duplicada',
+            'editado': 'Editada',
+            'criado': 'Criada',
+            'deletado': 'Deletada',
+        }
+        return acao_map.get(self.acao.lower(), self.acao.capitalize())
 
 
 
-def save(self, *args, **kwargs):
-    self._request = get_current_request()
-    super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        self._request = get_current_request()
+        super().save(*args, **kwargs)

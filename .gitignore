@@ -9,15 +9,18 @@ __pycache__/
 /staticfiles/
 /media/
 
-# Environment
+# Environment e Virtualenv
 .env
+.env.*
+venv/
+*/venv/
+
+# Logs
+*.log
 
 # VSCode / IDE
 .vscode/
 .idea/
-venv/
-# Logs
-*.log
 
 # Sistema
 .DS_Store

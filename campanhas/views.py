@@ -110,11 +110,24 @@ class CampanhaAnexoView(View):
             return HttpResponse("Sem anexo", status=404)
 
         ext = campanha.anexo.name.lower().split('.')[-1]
-        file_path = os.path.join(settings.MEDIA_ROOT, campanha.anexo.name)
 
+        # ✅ Abre o arquivo direto do storage (funciona local e Backblaze)
+        file_obj = campanha.anexo.open()
+
+        # 🔹 PDF → exibe inline
         if ext == 'pdf':
-            return FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+            return FileResponse(file_obj, content_type='application/pdf')
 
+        # 🔹 Excel (xlsx) → força download
+        elif ext == 'xlsx':
+            return FileResponse(
+                file_obj,
+                as_attachment=True,
+                filename=os.path.basename(campanha.anexo.name),
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+
+        # 🔹 Imagens → converte para PDF inline (mantendo funcionalidade original)
         elif ext in ['jpg', 'jpeg', 'png']:
             response = HttpResponse(content_type='application/pdf')
             response['Content-Disposition'] = f'inline; filename="campanha_{pk}_imagem.pdf"'
@@ -122,25 +135,16 @@ class CampanhaAnexoView(View):
             p.setFont("Helvetica", 12)
             p.drawString(100, 800, f"Anexo da campanha: {campanha.campanha}")
 
-            if os.path.exists(file_path):
-                p.drawImage(file_path, 100, 400, width=400, height=300, preserveAspectRatio=True)
-            else:
-                p.drawString(100, 780, "Imagem não encontrada.")
+            # ✅ Salva temporariamente a imagem localmente (se não estiver no disco)
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext}") as tmp:
+                tmp.write(file_obj.read())
+                tmp.flush()
+                p.drawImage(tmp.name, 100, 400, width=400, height=300, preserveAspectRatio=True)
 
             p.showPage()
             p.save()
             return response
-
-        elif ext == 'xlsx':
-            if os.path.exists(file_path):
-                return FileResponse(
-                    open(file_path, 'rb'),
-                    as_attachment=True,
-                    filename=os.path.basename(file_path),
-                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                )
-            else:
-                return HttpResponse("Arquivo Excel não encontrado", status=404)
 
         return HttpResponse("Tipo de anexo não suportado.", status=400)
     

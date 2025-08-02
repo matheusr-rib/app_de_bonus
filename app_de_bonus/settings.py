@@ -2,6 +2,8 @@ from pathlib import Path
 from decouple import config, Csv
 import dj_database_url
 import os
+from decouple import config, UndefinedValueError
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,6 +24,7 @@ INSTALLED_APPS = [
     'usuarios',
     'historico.apps.HistoricoConfig',
     'widget_tweaks',
+    'storages',  # ✅ Necessário para o Backblaze B2
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
@@ -82,12 +85,25 @@ USE_L10N = True
 USE_TZ = True
 USE_THOUSAND_SEPARATOR = True
 
-# ✅ Arquivos estáticos e mídia
+# ✅ Arquivos estáticos
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# ✅ Backblaze B2 - Uploads persistentes
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+try:
+    AWS_ACCESS_KEY_ID = config('B2_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = config('B2_APPLICATION_KEY')
+    AWS_STORAGE_BUCKET_NAME = config('B2_BUCKET_NAME')  # 🚨 sem default!
+    AWS_S3_ENDPOINT_URL = config('B2_ENDPOINT')
+    AWS_DEFAULT_ACL = None
+except UndefinedValueError as e:
+    raise RuntimeError(f"❌ Variável de ambiente faltando: {e}. Verifique seu .env")
+
+# ✅ Media URL (os arquivos serão servidos via Backblaze)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
 

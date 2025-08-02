@@ -9,13 +9,7 @@
 </div>
 
 <!-- MENSAGENS -->
-{% if messages %}
-  {% for message in messages %}
-    <div class="bg-green-100 text-green-800 px-4 py-3 mb-6 rounded-xl border border-green-200 text-sm font-medium">
-      {{ message }}
-    </div>
-  {% endfor %}
-{% endif %}
+
 
 <!-- TABELA DE USUÁRIOS -->
 <div class="overflow-x-auto">
@@ -24,7 +18,7 @@
       <tr>
         <th class="px-6 py-3 text-left">Usuário</th>
         <th class="px-6 py-3 text-left">Tipo</th>
-        <th class="px-6 py-3 text-left">Ativo</th>
+        <th class="px-6 py-3 text-left">Status</th>
         <th class="px-6 py-3 text-left">Ações</th>
       </tr>
     </thead>

@@ -425,7 +425,7 @@ class CampanhaDuplicarView(View):
         )
 
         messages.success(request, f"Campanha '{campanha_original.campanha}' duplicada com sucesso.")
-        return redirect('campanha_list')
+        return redirect('campanha_controle')
     
 
 @method_decorator(login_required, name='dispatch')

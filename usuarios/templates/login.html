@@ -1,100 +1,63 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Login • Lev Pricing</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" />
-  <style>
-    body {
-      background-color: #1f1f1f;
-      color: #ffffff;
-      min-height: 100vh;
-      background-image: url('https://images.unsplash.com/photo-1581091870622-7b91cbb07c62?auto=format&fit=crop&w=1470&q=80');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-    }
-
-    main.container {
-      background-color: rgba(0, 0, 0, 0.75);
-      padding: 3rem;
-      border-radius: 1rem;
-      max-width: 400px;
-      margin: 5rem auto;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
-    }
-
-    h2, h3 {
-      color: #fff;
-      text-align: center;
-    }
-
-    input, button {
-      background-color: #2a2a2a;
-      border: none;
-      color: white;
-    }
-
-    button {
-      background-color: #8a05be;
-      transition: background-color 0.3s ease;
-    }
-
-    button:hover {
-      background-color: #9f30d8;
-    }
-
-    footer.container {
-      text-align: center;
-      color: #bbb;
-      margin-top: 3rem;
-    }
-
-    .message-error {
-      color: #ff8888;
-      background-color: #440000;
-      padding: 10px;
-      margin-bottom: 1rem;
-      border-radius: 0.4rem;
-      text-align: center;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <nav class="container-fluid">
-    <ul>
-      <li><strong>Lev Pricing</strong></li>
-    </ul>
-  </nav>
+<body class="bg-gray-100 min-h-screen flex">
 
-  <main class="container">
-    <div class="grid">
-      <section>
-        <hgroup>
-          <h2>Bem-vindo de volta</h2>
-          <h3>Faça login para continuar</h3>
-        </hgroup>
+  <div class="flex flex-col md:flex-row w-full">
 
+    <!-- Lado esquerdo com logo -->
+    <div class="w-full md:w-1/2 bg-black flex items-center justify-center p-6">
+      <img src="{% static 'img/logo.png' %}" alt="Logo" class="max-w-[200px] md:max-w-xs">
+    </div>
+
+    <!-- Lado direito com formulário -->
+    <div class="w-full md:w-1/2 flex items-center justify-center bg-white p-6">
+      <div class="w-full max-w-md">
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center md:text-left">Bem-vindo de volta!</h2>
+        <p class="text-gray-500 mb-6 text-center md:text-left">Controle De Campanhas Bancárias</p>
+
+        <!-- Mensagens de erro apenas para login -->
         {% if messages %}
           {% for message in messages %}
-            <div class="message-error">{{ message }}</div>
+            {% if 'login' in message.tags %}
+              <div class="bg-red-100 text-red-700 px-4 py-2 mb-4 rounded text-center md:text-left">
+                {{ message }}
+              </div>
+            {% endif %}
           {% endfor %}
         {% endif %}
 
-        <form method="post">
+        <form method="post" class="space-y-4">
           {% csrf_token %}
-          <input type="text" name="username" placeholder="Usuário" required />
-          <input type="password" name="password" placeholder="Senha" required />
-          <button type="submit">Entrar</button>
+
+          <div>
+            <label class="block text-gray-700">Usuário</label>
+            <input type="text" name="username" placeholder="Seu usuário" required
+              class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500">
+          </div>
+
+          <div>
+            <label class="block text-gray-700">Senha</label>
+            <input type="password" name="password" placeholder="Sua senha" required
+              class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500">
+          </div>
+
+          <button type="submit"
+            class="w-full bg-purple-700 text-white py-2 rounded hover:bg-purple-800 transition">
+            Entrar
+          </button>
         </form>
-
-      </section>
+      </div>
     </div>
-  </main>
 
-  <footer class="container">
-    <small><a href="#">Política de Privacidade</a> • <a href="#">Termos de Uso</a></small>
-  </footer>
+  </div>
+
 </body>
 </html>

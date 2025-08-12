@@ -1,27 +1,17 @@
-# Python / Django
+
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 *.sqlite3
-
-# Django static & media
 /staticfiles/
 /media/
-
-# Environment e Virtualenv
 .env
 .env.*
 venv/
 */venv/
-
-# Logs
 *.log
-
-# VSCode / IDE
 .vscode/
 .idea/
-
-# Sistema
 .DS_Store
 Thumbs.db

@@ -111,10 +111,10 @@ class CampanhaAnexoView(View):
 
         ext = campanha.anexo.name.lower().split('.')[-1]
 
-        # ✅ Abre o arquivo direto do storage (funciona local e Backblaze)
+        
         file_obj = campanha.anexo.open()
 
-        # 🔹 PDF → exibe inline
+        
         if ext == 'pdf':
             return FileResponse(file_obj, content_type='application/pdf')
 
